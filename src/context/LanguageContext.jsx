@@ -1,0 +1,409 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+const translations = {
+  it: {
+    // Navbar
+    appTitle: 'GymLink',
+    appSubtitle: 'DATABASE SCHEDE ALLENAMENTO',
+    navStats: 'Statistiche',
+    navHome: 'Home',
+    navTutorial: 'Tutorial PT',
+    
+    // Home Page
+    heroBadge: 'SISTEMA GESTIONE SCHEDE • MODALITÀ GUEST',
+    heroTitle: 'Programmazione Tecnica per Personal Trainer',
+    heroSub: 'Crea schede di allenamento in 5 minuti',
+    heroDesc: 'Crea, condividi e gestisci schede di allenamento per i tuoi clienti con link crittografici non indicizzati. Zero registrazioni, zero attrito.',
+    btnCreateNew: 'Crea Nuova Scheda',
+    btnCreateNewSub: 'Nuovo protocollo da zero',
+    btnTutorial: 'Guida & Tutorial PT',
+    
+    // Edit Existing
+    btnToggleEdit: 'Modifica Scheda Esistente',
+    editBoxTitle: 'Modifica Scheda Esistente',
+    editBoxDesc: 'Inserisci il Link o l\'ID della scheda generata precedentemente per aprirla:',
+    editInputPlaceholder: 'es. https://gymlink.app/w/xK9d2Lp1q0 oppure xK9d2Lp1q0',
+    btnOpenWorkout: 'Carica Scheda',
+    invalidIdError: 'ID scheda non valido o formato URL non corretto.',
+    
+    // Recent Workouts Table
+    recentWorkoutsTitle: 'Schede Recenti su questo Dispositivo',
+    recentWorkoutsBadge: 'LOCAL STORAGE',
+    colId: 'ID PROTOCOLLO',
+    colTitle: 'TITOLO SCHEDA',
+    colClient: 'CLIENTE',
+    colDate: 'ULTIMA MODIFICA',
+    colActions: 'AZIONI',
+    noRecentWorkouts: 'Nessuna scheda memorizzata nella cache di questo browser.',
+    noRecentWorkoutsSub: 'Le schede create o modificate da questo dispositivo appariranno qui.',
+    actionOpen: 'Apri',
+    actionCopy: 'Copia Link',
+    copiedSuccess: 'Link copiato!',
+    
+    // Footer
+    createdBy: 'Creato da',
+    authorName: 'Francesco Santo',
+    datasetAttribution: 'Dataset:',
+    mediaAttribution: 'Media:',
+    gymVisualNote: '© Gym visual (gymvisual.com)',
+    datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
+    legalDisclaimerLink: 'Note Legali & Disclaimer Medico',
+    feedbackBtn: 'Feedback & Contatti',
+    
+    // Feedback Modal
+    feedbackModalTitle: 'Invia Feedback o Richiesta',
+    feedbackModalSubtitle: 'Scrivi direttamente allo sviluppatore. Risponderemo via email appena possibile.',
+    lblName: 'Nome e Cognome',
+    lblEmail: 'La tua Email',
+    lblMessage: 'Messaggio o Suggerimento',
+    phName: 'es. Mario Rossi',
+    phEmail: 'mario.rossi@example.com',
+    phMessage: 'Descrivi la tua richiesta, un bug riscontrato o un suggerimento per GymLink...',
+    btnSubmitFeedback: 'Invia Messaggio',
+    btnSubmitting: 'Invio in corso...',
+    feedbackSuccess: 'Grazie! Il tuo messaggio è stato inviato con successo.',
+    feedbackError: 'Si è verificato un errore durante l\'invio. Riprova più tardi.',
+    feedbackNoKeyWarning: 'Attenzione: Chiave Web3Forms non ancora configurata nel file .env. La modale è pronta a ricevere le credenziali.',
+    btnClose: 'Chiudi',
+    
+    // Disclaimer Modal
+    disclaimerModalTitle: 'Disclaimer Medico & Note Legali',
+    disclaimerP1: 'GymLink è uno strumento tecnico e gestionale ideato per Personal Trainer e atleti per la consultazione e strutturazione di programmi di allenamento.',
+    disclaimerP2: 'L\'applicazione non fornisce diagnosi, prescrizioni né consulenze mediche o nutrizionali. Qualsiasi programma di allenamento deve essere svolto nel rispetto delle proprie condizioni fisiche e sotto la supervisione di professionisti qualificati.',
+    disclaimerP3: 'Gli autori e i manutentori di GymLink declinano ogni responsabilità per eventuali infortuni o danni derivanti dall\'esecuzione degli esercizi presenti nelle schede compilate dagli utenti.',
+    disclaimerDatasetNote: 'Tutti i media, GIF e descrizioni biomeccaniche appartengono ai rispettivi proprietari: dataset hasaneyldrm/exercises-dataset e Gym Visual (gymvisual.com).',
+    disclaimerWarnLabel: 'ATTENZIONE:',
+
+    // Tutorial Page
+    tutorialBackHome: 'Torna alla Home',
+    tutorialEyebrow: 'MANUALE OPERATIVO PERSONAL TRAINER',
+    tutorialTitle: 'Come Usare GymLink al Meglio',
+    tutorialSubtitle: 'Una guida tecnica, sintetica e per punti per creare, organizzare e condividere schede di allenamento professionali senza perdite di tempo.',
+    tutorialStartNow: 'Inizia Ora a Creare la Scheda',
+    
+    tutSec1Title: '1. Creazione Scheda & Organizzazione Split',
+    tutSec1P1: 'Dati generali:',
+    tutSec1P2: 'Inserisci Titolo, Nome PT, Nome Cliente e le Note Generali (riscaldamento, raccomandazioni o carichi di lavoro).',
+    tutSec1P3: 'Dividi l\'allenamento in giornate con un clic (es. Giorno A - Push, Giorno B - Pull, Giorno C - Legs) per mantenere il programma strutturato.',
+
+    tutSec2Title: '2. Ricerca Intelligente degli Esercizi',
+    tutSec2P1: 'Database integrato di oltre 1300 esercizi con animazioni biomeccaniche.',
+    tutSec2P2: 'Cerca digitando sia in italiano che in inglese: puoi filtrare per nome (es. "panca"), distretto (es. "petto", "schiena") o attrezzatura.',
+    tutSec2P3: 'Al clic, Nome dell\'esercizio, GIF animata e istruzioni tecniche si compilano in automatico.',
+
+    tutSec3Title: '3. Eccezioni: Esercizio Non Trovato?',
+    tutSec3Notice: 'Massima flessibilità: non sei vincolato al catalogo predefinito.',
+    tutSec3P1: 'Pulsante "+ Nuovo Esercizio Manuale":',
+    tutSec3P2: 'Se un macchinario particolare o una variante specifica non è presente nel database, puoi inserire un nuovo esercizio compilando Titolo e Descrizione/Note.',
+    tutSec3P3: 'Se lo desideri, puoi associare un\'immagine o una GIF animata semplicemente inserendo il relativo link (URL), oppure lasciarlo senza immagine.',
+
+    tutSec4Title: '4. Modifica, Bozza e Template ("Duplica")',
+    tutSec4P1: 'Auto-salvataggio: mentre compili, il browser salva in automatico la bozza in locale per prevenire chiusure accidentali.',
+    tutSec4P2: 'Modifica esistente: incolla l\'ID o il link nella Home per aggiornare i carichi di un cliente o aggiungere settimane.',
+    tutSec4P3: 'Usa come Template: puoi clonare una scheda esistente con un clic per assegnarla a un altro cliente cambiando solo nomi e ripetizioni.',
+
+    tutSec5Title: '5. Condivisione Sicura & Mobile-First',
+    tutSec5P1: 'Generazione Link Unico crittografico (non indicizzato sui motori di ricerca).',
+    tutSec5P2: 'Il cliente apre il link dallo smartphone in sola lettura senza scaricare app né registrarsi.',
+    tutSec5P3: 'Condivisione WhatsApp immediata con messaggio precompilato pronto all\'invio.',
+    
+    // Restyling FMDB
+    statDevice: 'schede su questo dispositivo',
+    statLangs: 'lingue',
+    statSignup: 'registrazioni richieste',
+    tickerLabel: 'SPECIFICHE',
+    tickerItems: ['Nessuna registrazione', 'Link unico non indicizzato', 'GIF animate degli esercizi', 'Interfaccia IT / EN / ES', 'Mobile-first per il cliente', 'Bozza salvata in automatico', 'Duplica scheda come template', 'Open source', 'Schede create', 'Schede visualizzate'],
+    systemTitle: 'Metadati di sistema',
+    step2Toast: 'L\'editor schede arriva con lo STEP 2.',
+    idParsedToast: 'ID rilevato: {id} — il caricamento dal database arriva con lo STEP 4.',
+    statsSub: 'Telemetria globale delle schede',
+    statsKpiWorkouts: 'Schede create',
+    statsKpiViews: 'Visualizzazioni totali',
+    statsPending: 'In collegamento con lo STEP 4',
+    statsModuleTitle: 'Stato modulo statistiche',
+    statsModuleDesc: 'Questa pagina mostrerà metriche aggregate senza esporre dati sensibili né link delle schede. I conteggi verranno collegati nello STEP 4 tramite la funzione Supabase'
+  },
+  en: {
+    // Navbar
+    appTitle: 'GymLink',
+    appSubtitle: 'TECHNICAL WORKOUT DATABASE',
+    navStats: 'Global Stats',
+    navHome: 'Home',
+    navTutorial: 'PT Guide',
+    
+    // Home Page
+    heroBadge: 'WORKOUT PROTOCOL SYSTEM • GUEST MODE',
+    heroTitle: 'Technical Programming for Personal Trainers',
+    heroSub: 'Build workout routines in 5 minutes',
+    heroDesc: 'Build, share, and manage client workout routines via non-indexed cryptographic links. Zero accounts required, zero friction.',
+    btnCreateNew: 'Create New Routine',
+    btnCreateNewSub: 'New protocol from scratch',
+    btnTutorial: 'PT Guide & Tutorial',
+    
+    // Edit Existing
+    btnToggleEdit: 'Edit Existing Routine',
+    editBoxTitle: 'Edit Existing Routine',
+    editBoxDesc: 'Paste the routine link or unique ID to load it into the workspace:',
+    editInputPlaceholder: 'e.g. https://gymlink.app/w/xK9d2Lp1q0 or xK9d2Lp1q0',
+    btnOpenWorkout: 'Load Routine',
+    invalidIdError: 'Invalid routine ID or link format.',
+    
+    // Recent Workouts Table
+    recentWorkoutsTitle: 'Recent Routines on this Device',
+    recentWorkoutsBadge: 'LOCAL STORAGE',
+    colId: 'PROTOCOL ID',
+    colTitle: 'ROUTINE TITLE',
+    colClient: 'CLIENT',
+    colDate: 'LAST MODIFIED',
+    colActions: 'ACTIONS',
+    noRecentWorkouts: 'No cached routines found on this browser.',
+    noRecentWorkoutsSub: 'Routines you create or open on this device will be indexed here.',
+    actionOpen: 'Open',
+    actionCopy: 'Copy Link',
+    copiedSuccess: 'Link copied!',
+    
+    // Footer
+    createdBy: 'Created by',
+    authorName: 'Francesco Santo',
+    datasetAttribution: 'Dataset:',
+    mediaAttribution: 'Media:',
+    gymVisualNote: '© Gym visual (gymvisual.com)',
+    datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
+    legalDisclaimerLink: 'Legal & Medical Disclaimer',
+    feedbackBtn: 'Feedback & Support',
+    
+    // Feedback Modal
+    feedbackModalTitle: 'Submit Feedback or Inquiries',
+    feedbackModalSubtitle: 'Direct line to the developer. We will get back to you via email.',
+    lblName: 'Your Name',
+    lblEmail: 'Your Email',
+    lblMessage: 'Message or Suggestion',
+    phName: 'e.g. John Doe',
+    phEmail: 'john.doe@example.com',
+    phMessage: 'Describe a feature request, bug report, or feedback...',
+    btnSubmitFeedback: 'Send Message',
+    btnSubmitting: 'Sending...',
+    feedbackSuccess: 'Thank you! Your message has been sent successfully.',
+    feedbackError: 'An error occurred while sending. Please try again later.',
+    feedbackNoKeyWarning: 'Notice: Web3Forms access key not set in .env yet. The form is ready to use once configured.',
+    btnClose: 'Close',
+    
+    // Disclaimer Modal
+    disclaimerModalTitle: 'Medical & Legal Disclaimer',
+    disclaimerP1: 'GymLink is a technical tool designed for fitness professionals and athletes to organize and inspect workout protocols.',
+    disclaimerP2: 'This software does not offer medical diagnoses or personalized healthcare advice. Any physical training should be conducted in accordance with individual capabilities and qualified professional guidance.',
+    disclaimerP3: 'The authors disclaim any liability for injuries or damages arising from exercises contained in user-generated protocols.',
+    disclaimerDatasetNote: 'All media, animations, and anatomical data belong to their respective creators: hasaneyldrm/exercises-dataset and Gym Visual (gymvisual.com).',
+    disclaimerWarnLabel: 'WARNING:',
+
+    // Tutorial Page
+    tutorialBackHome: 'Back to Home',
+    tutorialEyebrow: 'PERSONAL TRAINER OPERATING MANUAL',
+    tutorialTitle: 'How to Get the Most Out of GymLink',
+    tutorialSubtitle: 'A concise, step-by-step technical manual for trainers to build, manage and deliver high-standard workout protocols.',
+    tutorialStartNow: 'Start Building a Routine Now',
+    
+    tutSec1Title: '1. Routine Creation & Split Organization',
+    tutSec1P1: 'General metadata:',
+    tutSec1P2: 'Fill in Routine Title, Trainer Name, Client Name, and general instructions (warm-up, hydration, progressive overload notes).',
+    tutSec1P3: 'Structure the split across days with 1 click (e.g. Day A - Push, Day B - Pull, Day C - Legs) for modular periodization.',
+
+    tutSec2Title: '2. Smart Exercise Search',
+    tutSec2P1: 'Integrated database of 1300+ exercises with biomechanical animations.',
+    tutSec2P2: 'Search seamlessly in English or Italian by name, muscle group (e.g. "chest", "back") or equipment.',
+    tutSec2P3: 'Clicking any entry instantly loads its exercise name, verified animated GIF and technique instructions.',
+
+    tutSec3Title: '3. Exceptions: Exercise Not in Database?',
+    tutSec3Notice: 'Full customization: you are never locked into pre-existing catalog entries.',
+    tutSec3P1: '"+ New Manual Exercise" Button:',
+    tutSec3P2: 'If a unique machine or exercise variation is missing, create a custom entry specifying its Title and Description/Notes.',
+    tutSec3P3: 'You can also attach an image or animated GIF simply by pasting its URL link, or keep it text-only.',
+
+    tutSec4Title: '4. Edit, Auto-Save & Template Duplication',
+    tutSec4P1: 'Auto-save draft: as you type, your browser automatically saves your progress locally to prevent data loss.',
+    tutSec4P2: 'Edit existing routines: paste any generated ID/link on Home to tweak weights, reps, or advance training blocks.',
+    tutSec4P3: 'Duplicate as Template: clone an existing routine in 1 second to tailor it for a new client without re-typing exercises.',
+
+    tutSec5Title: '5. Secure & Mobile-First Client Delivery',
+    tutSec5P1: 'Cryptographic unique URL generated on save (no-index, non-crawlable).',
+    tutSec5P2: 'Clients open the link directly on mobile browsers with zero sign-ups or app downloads.',
+    tutSec5P3: 'Instant WhatsApp sharing with pre-formatted direct message.',
+    
+    // FMDB restyling
+    statDevice: 'routines on this device',
+    statLangs: 'languages',
+    statSignup: 'sign-ups required',
+    tickerLabel: 'SPECS',
+    tickerItems: ['No sign-up', 'Unique non-indexed link', 'Animated exercise GIFs', 'IT / EN / ES interface', 'Mobile-first client view', 'Draft auto-save', 'Duplicate as template', 'Open source', 'Routines created', 'Routines viewed'],
+    systemTitle: 'System metadata',
+    step2Toast: 'The routine editor arrives with STEP 2.',
+    idParsedToast: 'ID detected: {id} — database loading arrives with STEP 4.',
+    statsSub: 'Global routine telemetry',
+    statsKpiWorkouts: 'Routines created',
+    statsKpiViews: 'Total views',
+    statsPending: 'Wired up in STEP 4',
+    statsModuleTitle: 'Stats module status',
+    statsModuleDesc: 'This page will show aggregated metrics without exposing sensitive data or routine links. Counters will be wired in STEP 4 through the Supabase function'
+  },
+  es: {
+    // Navbar
+    appTitle: 'GymLink',
+    appSubtitle: 'BASE DE DATOS TÉCNICA DE ENTRENAMIENTO',
+    navStats: 'Estadísticas',
+    navHome: 'Inicio',
+    navTutorial: 'Guía PT',
+    
+    // Home Page
+    heroBadge: 'SISTEMA DE RUTINAS • MODO INVITADO',
+    heroTitle: 'Programación Técnica para Entrenadores',
+    heroSub: 'Crea rutinas de entrenamiento en 5 minutos',
+    heroDesc: 'Crea, comparte y administra rutinas de entrenamiento mediante enlaces únicos no indexados. Sin registro, sin fricción.',
+    btnCreateNew: 'Crear Nueva Rutina',
+    btnCreateNewSub: 'Nuevo protocolo desde cero',
+    btnTutorial: 'Guía y Tutorial PT',
+    
+    // Edit Existing
+    btnToggleEdit: 'Modificar Rutina Existente',
+    editBoxTitle: 'Modificar Rutina Existente',
+    editBoxDesc: 'Ingresa el enlace o ID de la rutina para cargarla:',
+    editInputPlaceholder: 'ej. https://gymlink.app/w/xK9d2Lp1q0 o xK9d2Lp1q0',
+    btnOpenWorkout: 'Cargar Rutina',
+    invalidIdError: 'ID o formato de enlace no válido.',
+    
+    // Recent Workouts Table
+    recentWorkoutsTitle: 'Rutinas Recientes en este Dispositivo',
+    recentWorkoutsBadge: 'ALMACENAMIENTO LOCAL',
+    colId: 'ID PROTOCOLO',
+    colTitle: 'TÍTULO RUTINA',
+    colClient: 'CLIENTE',
+    colDate: 'ÚLTIMA MODIFICACIÓN',
+    colActions: 'ACCIONES',
+    noRecentWorkouts: 'No hay rutinas almacenadas en la caché de este navegador.',
+    noRecentWorkoutsSub: 'Las rutinas creadas o abiertas en este dispositivo aparecerán aquí.',
+    actionOpen: 'Abrir',
+    actionCopy: 'Copiar Enlace',
+    copiedSuccess: '¡Enlace copiado!',
+    
+    // Footer
+    createdBy: 'Creado por',
+    authorName: 'Francesco Santo',
+    datasetAttribution: 'Dataset:',
+    mediaAttribution: 'Media:',
+    gymVisualNote: '© Gym visual (gymvisual.com)',
+    datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
+    legalDisclaimerLink: 'Aviso Legal y Médico',
+    feedbackBtn: 'Comentarios y Contacto',
+    
+    // Feedback Modal
+    feedbackModalTitle: 'Enviar Comentarios o Consultas',
+    feedbackModalSubtitle: 'Contacto directo con el desarrollador. Responderemos a tu correo lo antes posible.',
+    lblName: 'Nombre Completo',
+    lblEmail: 'Correo Electrónico',
+    lblMessage: 'Mensaje o Sugerencia',
+    phName: 'ej. Carlos García',
+    phEmail: 'carlos.garcia@example.com',
+    phMessage: 'Cuéntanos tu sugerencia o describe el problema encontrado...',
+    btnSubmitFeedback: 'Enviar Mensaje',
+    btnSubmitting: 'Enviando...',
+    feedbackSuccess: '¡Gracias! Tu mensaje ha sido enviado exitosamente.',
+    feedbackError: 'Ocurrió un error al enviar. Por favor intenta más tarde.',
+    feedbackNoKeyWarning: 'Aviso: Clave Web3Forms aún no configurada en el archivo .env.',
+    btnClose: 'Cerrar',
+    
+    // Disclaimer Modal
+    disclaimerModalTitle: 'Descargo de Responsabilidad Médica y Legal',
+    disclaimerP1: 'GymLink es una herramienta técnica desarrollada para que entrenadores personales y atletas estructuren y consulten programas de entrenamiento.',
+    disclaimerP2: 'La aplicación no proporciona diagnósticos ni asesoramiento médico. Todo ejercicio debe realizarse de acuerdo con las capacidades físicas personales.',
+    disclaimerP3: 'Los autores declinan toda responsabilidad por lesiones o daños derivados de la ejecución de los ejercicios presentes en los programas.',
+    disclaimerDatasetNote: 'Todos los recursos multimedia pertenecen a sus respectivos autores: hasaneyldrm/exercises-dataset y Gym Visual (gymvisual.com).',
+    disclaimerWarnLabel: 'ATENCIÓN:',
+
+    // Tutorial Page
+    tutorialBackHome: 'Volver al Inicio',
+    tutorialEyebrow: 'MANUAL OPERATIVO PARA ENTRENADORES',
+    tutorialTitle: 'Cómo Aprovechar GymLink al Máximo',
+    tutorialSubtitle: 'Una guía técnica y sintetizada paso a paso para entrenadores que buscan estructurar y compartir programas de entrenamiento profesionales.',
+    tutorialStartNow: 'Empezar a Crear la Rutina',
+    
+    tutSec1Title: '1. Creación de Rutinas y División de Días',
+    tutSec1P1: 'Datos del protocolo:',
+    tutSec1P2: 'Completa Título, Nombre del Entrenador, Nombre del Cliente y las Notas Generales (calentamiento, observaciones y pautas de carga).',
+    tutSec1P3: 'Estructura la rutina por días con 1 clic (ej. Día A - Push, Día B - Pull, Día C - Legs) para una organización modular.',
+
+    tutSec2Title: '2. Búsqueda Inteligente de Ejercicios',
+    tutSec2P1: 'Base de datos integrada de más de 1300 ejercicios con animaciones biomecánicas.',
+    tutSec2P2: 'Busca indistintamente en español, inglés o italiano por nombre, grupo muscular o equipamiento.',
+    tutSec2P3: 'Al hacer clic, el nombre, el GIF animado y las pautas técnicas se autocompletan al instante.',
+
+    tutSec3Title: '3. Excepciones: ¿No Encuentras un Ejercicio?',
+    tutSec3Notice: 'Total flexibilidad: nunca estás limitado al catálogo predeterminado.',
+    tutSec3P1: 'Botón "+ Nuevo Ejercicio Manual":',
+    tutSec3P2: 'Si una máquina o variante específica no está en la base, añade un nuevo ejercicio completando Título y Descripción/Pautas.',
+    tutSec3P3: 'Si lo deseas, puedes asociar una imagen o un GIF animado simplemente pegando el enlace (URL), o dejarlo solo en texto.',
+
+    tutSec4Title: '4. Edición, Guardado Local y Plantillas ("Duplicar")',
+    tutSec4P1: 'Guardado automático: mientras editas, el navegador almacena el borrador para evitar pérdidas accidentales.',
+    tutSec4P2: 'Modificar existente: pega el enlace o ID en Inicio para actualizar repeticiones o avanzar mesociclos.',
+    tutSec4P3: 'Duplicar como Plantilla: clona un programa previo en 1 segundo para adaptarlo a un nuevo cliente sin volver a teclear nada.',
+
+    tutSec5Title: '5. Entrega Segura y Mobile-First al Cliente',
+    tutSec5P1: 'Enlace criptográfico único generado al guardar (no indexado en motores de búsqueda).',
+    tutSec5P2: 'El cliente abre el enlace en su smartphone en modo solo lectura, sin registros ni apps.',
+    tutSec5P3: 'Envío instantáneo por WhatsApp con mensaje preformateado listo para enviar.',
+    
+    // Rediseño FMDB
+    statDevice: 'rutinas en este dispositivo',
+    statLangs: 'idiomas',
+    statSignup: 'registros necesarios',
+    tickerLabel: 'ESPECIFICACIONES',
+    tickerItems: ['Sin registro', 'Enlace único no indexado', 'GIF animados de ejercicios', 'Interfaz IT / EN / ES', 'Vista cliente mobile-first', 'Borrador guardado automáticamente', 'Duplicar como plantilla', 'Código abierto', 'Rutinas creadas', 'Rutinas visualizadas'],
+    systemTitle: 'Metadatos del sistema',
+    step2Toast: 'El editor de rutinas llega con el STEP 2.',
+    idParsedToast: 'ID detectado: {id} — la carga desde la base de datos llega con el STEP 4.',
+    statsSub: 'Telemetría global de rutinas',
+    statsKpiWorkouts: 'Rutinas creadas',
+    statsKpiViews: 'Visualizaciones totales',
+    statsPending: 'Se conecta en el STEP 4',
+    statsModuleTitle: 'Estado del módulo de estadísticas',
+    statsModuleDesc: 'Esta página mostrará métricas agregadas sin exponer datos sensibles ni enlaces de rutinas. Los contadores se conectarán en el STEP 4 mediante la función de Supabase'
+  }
+};
+
+const LanguageContext = createContext();
+
+export function LanguageProvider({ children }) {
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('gymlink_lang') || 'it';
+  });
+
+  const changeLanguage = (newLang) => {
+    if (translations[newLang]) {
+      setLang(newLang);
+      localStorage.setItem('gymlink_lang', newLang);
+    }
+  };
+
+  const t = (key) => {
+    return translations[lang]?.[key] || translations['it']?.[key] || key;
+  };
+
+  // Mantiene l'attributo lang della pagina allineato alla lingua scelta
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  return (
+    <LanguageContext.Provider value={{ lang, changeLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
+

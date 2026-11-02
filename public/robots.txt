@@ -1,0 +1,14 @@
+# GymLink Robots.txt
+# Disallow indexing of private athlete workout routines and admin console
+
+User-agent: *
+Disallow: /w/
+Disallow: /workout/
+Disallow: /admin
+Disallow: /manutenzione
+
+Allow: /
+Allow: /editor
+Allow: /tutorial
+Allow: /guida
+Allow: /stats

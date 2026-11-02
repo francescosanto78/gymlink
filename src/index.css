@@ -1,0 +1,613 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   GymLink Design Tokens — ispirati a FMDB (stanleygurvich.github.io/FMDB_FM1_FirmwareDatabase)
+   Valori come triplette RGB per supportare i modificatori di opacità di Tailwind (es. bg-acc/10).
+   Per cambiare l'intera palette basta modificare questo blocco.
+   ========================================================================== */
+:root {
+  --c-bg: 7 16 13;          /* #07100d  sfondo notte smeraldo */
+  --c-bg2: 13 26 22;        /* #0d1a16  sfondo secondario */
+  --c-card: 16 33 28;       /* #10211c  pannelli */
+  --c-surf: 19 24 23;       /* #131817  superficie card neutra */
+  --c-surf2: 15 19 18;      /* #0f1312 */
+  --c-line: 30 58 49;       /* #1e3a31  bordi pannelli */
+  --c-line2: 44 84 70;      /* #2c5446  bordi hover */
+  --c-sline: 38 48 45;      /* #26302d  bordi card neutre */
+  --c-fg: 230 242 236;      /* #e6f2ec  testo primario */
+  --c-dim: 143 179 164;     /* #8fb3a4  testo secondario */
+  --c-acc: 62 230 160;      /* #3ee6a0  accento */
+  --c-acc2: 184 245 217;    /* #b8f5d9  accento chiaro */
+  --c-ink: 4 23 15;         /* #04170f  testo su accento */
+  --c-warn: 245 199 107;    /* #f5c76b */
+  --c-info: 125 186 240;    /* #7dbaf0 */
+  --c-danger: 255 139 143;  /* #ff8b8f */
+  --glow: rgba(62, 230, 160, 0.35);
+}
+
+/* ==========================================================================
+   GymLink Light Theme — Sfondo bianco puro, pulsanti blu chiaro, font neri puliti
+   ========================================================================== */
+html.theme-light {
+  color-scheme: light;
+  background: #ffffff !important;
+  --c-bg: 255 255 255;          /* #ffffff puro */
+  --c-bg2: 248 250 252;        /* #f8fafc slate-50 */
+  --c-card: 255 255 255;       /* #ffffff */
+  --c-surf: 255 255 255;       /* #ffffff */
+  --c-surf2: 248 250 252;      /* #f8fafc */
+  --c-line: 125 180 240;       /* azzurro ben visibile */
+  --c-line2: 59 130 246;       /* blu hover */
+  --c-sline: 147 197 253;      /* blu chiaro per bordi card */
+  --c-fg: 15 23 42;            /* #0f172a nero nitido */
+  --c-dim: 100 116 139;        /* #64748b grigio ardesia leggibile */
+  --c-acc: 2 132 199;          /* #0284c7 blu chiaro / sky blue brillante */
+  --c-acc2: 56 189 248;        /* #38bdf8 azzurro chiaro */
+  --c-ink: 255 255 255;        /* #ffffff testo bianco su bottoni blu */
+  --c-warn: 217 119 6;         /* #d97706 */
+  --c-info: 2 132 199;         /* #0284c7 */
+  --c-danger: 239 68 68;       /* #ef4444 */
+  --glow: rgba(2, 132, 199, 0.25);
+}
+
+html.theme-light .gl-starfield-canvas {
+  display: none !important;
+}
+
+html.theme-light .gl-card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+html.theme-light .gl-card:hover {
+  border-color: #cbd5e1 !important;
+}
+
+html.theme-light .gl-card-head {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+html.theme-light .gl-panel {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+html.theme-light .gl-input {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html.theme-light .gl-input:hover {
+  border-color: #94a3b8 !important;
+}
+
+html.theme-light .gl-input:focus {
+  border-color: rgb(var(--c-acc)) !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+html.theme-light .gl-btn-primary {
+  background: rgb(var(--c-acc)) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25) !important;
+}
+
+html.theme-light .gl-btn-primary:hover {
+  background: #0369a1 !important;
+}
+
+html.theme-light .gl-btn {
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+  background: #ffffff !important;
+}
+
+html.theme-light .gl-btn:hover {
+  border-color: rgb(var(--c-acc)) !important;
+  color: rgb(var(--c-acc)) !important;
+  background: #f0f9ff !important;
+}
+
+html.theme-light .gl-ticker {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .gl-tag {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+html.theme-light .gl-glow {
+  text-shadow: none !important;
+  color: rgb(var(--c-acc)) !important;
+}
+
+
+/* ---- Tema chiaro: tipografia moderna (niente font vintage/monospace) e bordi blu evidenti ---- */
+html.theme-light .font-dot,
+html.theme-light .font-mono,
+html.theme-light .gl-eyebrow,
+html.theme-light .gl-tag,
+html.theme-light .gl-btn,
+html.theme-light .gl-btn-primary,
+html.theme-light .gl-input,
+html.theme-light .gl-label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif !important;
+  letter-spacing: normal !important;
+}
+html.theme-light .font-dot { font-weight: 800; }
+html.theme-light .gl-card,
+html.theme-light .gl-panel {
+  border: 1.5px solid #93c5fd !important;
+  border-radius: 16px !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.08) !important;
+}
+html.theme-light .gl-card:hover { border-color: #3b82f6 !important; }
+html.theme-light .gl-card-head { border-bottom: 1.5px solid #bfdbfe !important; background: #eff6ff !important; }
+html.theme-light .gl-btn { border: 1.5px solid #93c5fd !important; color: #1d4ed8 !important; }
+html.theme-light .gl-btn:hover { border-color: #2563eb !important; background: #eff6ff !important; }
+html.theme-light .gl-input { border: 1.5px solid #93c5fd !important; }
+html.theme-light .gl-input:focus { border-color: #2563eb !important; }
+html.theme-light .gl-tag { border-color: #93c5fd !important; background: #eff6ff !important; color: #1d4ed8 !important; }
+
+/* Riquadri Parametri (Serie, Reps, Carico, Recupero) - Tema Chiaro: bordo blu evidente e spesso */
+html.theme-light .gl-param-card {
+  border: 2px solid #38bdf8 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08) !important;
+}
+html.theme-light .gl-param-card:hover {
+  border-color: #0284c7 !important;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.16) !important;
+}
+
+html.theme-light .gl-param-input {
+  border: 2px solid #38bdf8 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.08) !important;
+}
+html.theme-light .gl-param-input:focus {
+  outline: none !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* Riquadri Parametri (Serie, Reps, Carico, Recupero) - Tema Scuro: verde fluo evidente */
+.gl-param-card {
+  border-radius: 12px;
+  border: 1.5px solid rgba(62, 230, 160, 0.8);
+  background: #091913;
+  box-shadow: 0 0 12px -3px rgba(62, 230, 160, 0.28);
+  transition: all 0.2s ease;
+}
+.gl-param-card:hover {
+  border-color: #3ee6a0;
+  box-shadow: 0 0 16px -2px rgba(62, 230, 160, 0.5);
+}
+
+.gl-param-input {
+  border-radius: 12px;
+  border: 1.5px solid rgba(62, 230, 160, 0.8);
+  background: #091913;
+  color: #e6f2ec;
+  box-shadow: 0 0 12px -3px rgba(62, 230, 160, 0.28);
+  transition: all 0.2s ease;
+  height: 32px;
+  padding: 0 8px;
+  font-family: inherit;
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+}
+.gl-param-input:focus {
+  outline: none;
+  border-color: #3ee6a0;
+  box-shadow: 0 0 18px -2px rgba(62, 230, 160, 0.65);
+}
+
+/* Card Esercizio: bordino perimetrale esterno più evidente, spesso e chiaro per delineare ogni esercizio */
+.gl-exercise-card {
+  border: 2px solid rgba(62, 230, 160, 0.45);
+  background: rgba(13, 26, 22, 0.95);
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.5), 0 0 12px -3px rgba(62, 230, 160, 0.15);
+  transition: all 0.2s ease;
+}
+.gl-exercise-card:hover {
+  border-color: rgba(62, 230, 160, 0.8);
+  box-shadow: 0 6px 24px -4px rgba(0, 0, 0, 0.65), 0 0 18px -2px rgba(62, 230, 160, 0.35);
+}
+
+html.theme-light .gl-exercise-card {
+  border: 2px solid #38bdf8 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.08) !important;
+}
+html.theme-light .gl-exercise-card:hover {
+  border-color: #0284c7 !important;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.16) !important;
+}
+
+/* Con una modale aperta la Navbar diventa solida: separa nettamente il top menu dalla finestra sottostante */
+body.gl-modal-open #gl-navbar {
+  background: rgb(var(--c-bg)) !important;
+  border-bottom-color: rgb(var(--c-line)) !important;
+  backdrop-filter: none !important;
+}
+
+/* Visibilità per tema (GIF retro solo nel tema scuro) */
+.gl-light-only { display: none; }
+html.theme-light .gl-light-only { display: block; }
+html.theme-light .gl-dark-only { display: none !important; }
+@layer base {
+  html {
+    color-scheme: dark;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgb(var(--c-acc) / 0.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgb(var(--c-acc) / 0.06), transparent 60%),
+      rgb(var(--c-bg));
+    background-attachment: fixed;
+  }
+
+  body {
+    margin: 0;
+    color: rgb(var(--c-fg));
+    font-size: 13px;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    background: transparent;
+  }
+
+  ::selection {
+    background: rgb(var(--c-acc) / 0.25);
+    color: rgb(var(--c-acc2));
+  }
+}
+
+@layer components {
+  /* ---------- Pannelli & card ---------- */
+  .gl-panel {
+    position: relative;
+    border-radius: 14px;
+    border: 1px solid rgb(var(--c-line));
+    background: linear-gradient(180deg, rgb(var(--c-card)), rgb(var(--c-bg2)));
+  }
+
+  /* Card con colore di famiglia (--fc), gradiente, bordo che si illumina all'hover */
+  .gl-card {
+    --fc: rgb(var(--c-acc));
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--fc) 8%, rgb(var(--c-surf))), rgb(var(--c-surf2)) 70%);
+    border: 1px solid color-mix(in srgb, var(--fc) 22%, rgb(var(--c-sline)));
+    box-shadow: inset 0 0 30px -8px color-mix(in srgb, var(--fc) 10%, transparent);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .gl-card:hover {
+    border-color: color-mix(in srgb, var(--fc) 55%, transparent);
+  }
+  .gl-card:focus-within {
+    border-color: var(--fc);
+  }
+
+  /* Testata della card con l'angolo in alto a destra smussato (come i banner FMDB) */
+  .gl-card-head {
+    position: relative;
+    padding: 12px 16px;
+    background: color-mix(in srgb, var(--fc) 7%, rgb(var(--c-bg)));
+    border-bottom: 1px solid color-mix(in srgb, var(--fc) 18%, rgb(var(--c-sline)));
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+  }
+
+  /* ---------- Tipografia ---------- */
+  .gl-eyebrow {
+    font-family: theme('fontFamily.mono');
+    font-weight: 700;
+    font-size: 10.5px;
+    line-height: 1;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgb(var(--c-acc));
+  }
+
+  .gl-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 10px/1 theme('fontFamily.mono');
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgb(var(--c-bg));
+    color: var(--fc, rgb(var(--c-acc)));
+    border: 1px solid color-mix(in srgb, var(--fc, rgb(var(--c-acc))) 25%, transparent);
+  }
+
+  .gl-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex: none;
+    background: var(--fc, rgb(var(--c-acc)));
+    box-shadow: 0 0 6px color-mix(in srgb, var(--fc, rgb(var(--c-acc))) 70%, transparent);
+  }
+  .gl-dot.pulse {
+    animation: gl-botp 2.4s ease-out infinite;
+  }
+
+  .gl-glow {
+    color: rgb(var(--c-acc));
+    text-shadow: 0 0 32px var(--glow);
+  }
+
+  /* ---------- Pulsanti ---------- */
+  .gl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid rgb(var(--c-sline));
+    background: transparent;
+    color: rgb(var(--c-fg));
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+  }
+  .gl-btn:hover {
+    border-color: rgb(var(--c-acc));
+    color: rgb(var(--c-acc));
+  }
+  .gl-btn:focus-visible,
+  .gl-btn-primary:focus-visible {
+    outline: 2px solid rgb(var(--c-acc2));
+    outline-offset: 2px;
+  }
+
+  .gl-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 12px;
+    border: 0;
+    background: rgb(var(--c-acc));
+    color: rgb(var(--c-ink));
+    font: 700 12.5px/1 theme('fontFamily.mono');
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgb(var(--c-acc) / 0.4), 0 8px 28px -10px var(--glow);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.15s;
+  }
+  .gl-btn-primary:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 0 0 1px rgb(var(--c-acc) / 0.6), 0 10px 36px -8px var(--glow);
+    transform: translateY(-1px);
+  }
+  .gl-btn-primary:active {
+    transform: translateY(0);
+  }
+  .gl-btn-primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+    transform: none;
+  }
+
+  /* ---------- Campi ---------- */
+  .gl-input {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    box-sizing: border-box;
+    font-size: 13.5px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid rgb(var(--c-sline));
+    background: rgb(var(--c-card));
+    color: rgb(var(--c-fg));
+    transition: border-color 0.12s, box-shadow 0.12s;
+  }
+  textarea.gl-input {
+    height: auto;
+    padding: 10px 14px;
+    resize: none;
+  }
+  .gl-input::placeholder {
+    color: rgb(var(--c-dim) / 0.7);
+  }
+  .gl-input:hover {
+    border-color: rgb(var(--c-line2));
+  }
+  .gl-input:focus {
+    border-color: rgb(var(--c-acc));
+    box-shadow: 0 0 0 3px rgb(var(--c-acc) / 0.15);
+    outline: none;
+  }
+
+  .gl-label {
+    display: block;
+    margin-bottom: 6px;
+    font: 700 10.5px/1 theme('fontFamily.mono');
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(var(--c-dim));
+  }
+
+  /* ---------- Ticker (barra LATEST di FMDB) ---------- */
+  .gl-ticker {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 40px;
+    padding-left: 14px;
+    border: 1px solid rgb(var(--c-line));
+    border-radius: 12px;
+    background: rgb(var(--c-bg2));
+    overflow: hidden;
+  }
+  .gl-ticker-track {
+    display: flex;
+    width: max-content;
+    animation: gl-tick 40s linear infinite;
+  }
+  .gl-ticker:hover .gl-ticker-track {
+    animation-play-state: paused;
+  }
+  .gl-ticker-mask {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 28px, #000 calc(100% - 28px), transparent);
+  }
+
+  /* ---------- Cursore a blocco lampeggiante (statistiche "digitate") ---------- */
+  .gl-caret::after {
+    content: "";
+    display: inline-block;
+    width: 0.5em;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -0.12em;
+    background: rgb(var(--c-acc));
+    animation: gl-caret 1s steps(1) infinite;
+  }
+
+  /* ---------- Cielo stellato ---------- */
+  .gl-sky {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    /* Morbida sfumatura solo sul bordo superiore per non interferire con la barra */
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 45px);
+    mask-image: linear-gradient(180deg, transparent 0, #000 45px);
+  }
+  .gl-sky-drift {
+    position: absolute;
+    inset: -5%;
+    width: 110%;
+    height: 110%;
+    animation: gl-drift 75s ease-in-out infinite alternate;
+  }
+  .gl-star {
+    position: absolute;
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    translate: -50% -50%;
+    background: #ffffff;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.7);
+    opacity: var(--o);
+    animation: gl-twinkle 3s ease-in-out infinite alternate;
+  }
+  .gl-star.tint {
+    background: rgb(var(--c-acc));
+    box-shadow: 0 0 5px rgb(var(--c-acc) / 0.85);
+  }
+  .gl-sat {
+    position: absolute;
+    width: 2.4px;
+    height: 2.4px;
+    border-radius: 50%;
+    translate: -50% -50%;
+    opacity: 0.85;
+    background: #ffffff;
+    box-shadow: 0 0 6px rgb(var(--c-acc) / 0.9);
+    animation: gl-satgo var(--dur, 60s) linear infinite;
+  }
+
+  /* ---------- Entrate animate ---------- */
+  .gl-page-in {
+    animation: gl-pgin 0.5s ease-out both;
+  }
+  .gl-rise {
+    animation: gl-face 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+  .gl-modal-backdrop {
+    animation: gl-fadein 0.18s ease-out both;
+  }
+  .gl-modal {
+    animation: gl-welup 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .gl-flash {
+    animation: gl-flash 1.2s ease-out;
+  }
+}
+
+/* ---------- Keyframes (stessi movimenti della reference) ---------- */
+@keyframes gl-pgin { from { opacity: 0; transform: translateY(6px); } }
+@keyframes gl-face { from { opacity: 0; transform: translateY(10px); } }
+@keyframes gl-fadein { from { opacity: 0; } }
+@keyframes gl-welup { from { transform: translateY(14px) scale(0.97); opacity: 0; } }
+@keyframes gl-caret { 50% { opacity: 0; } }
+@keyframes gl-tick { to { transform: translateX(-50%); } }
+@keyframes gl-botp {
+  0% { box-shadow: 0 0 0 0 var(--glow); }
+  70%, 100% { box-shadow: 0 0 0 7px transparent; }
+}
+@keyframes gl-flash {
+  from { box-shadow: 0 0 0 2px rgb(var(--c-acc)), 0 0 40px var(--glow); }
+  to { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes gl-drift {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-2.5%, 2%); }
+  100% { transform: translate(2%, -2%); }
+}
+@keyframes gl-twinkle {
+  0% { opacity: calc(var(--o) * 0.2); transform: scale(0.7); }
+  50% { opacity: var(--o); transform: scale(1.25); filter: drop-shadow(0 0 3px currentColor); }
+  100% { opacity: calc(var(--o) * 0.35); transform: scale(0.85); }
+}
+@keyframes gl-satgo {
+  from { left: var(--x0); top: var(--y0); }
+  to { left: var(--x1); top: var(--y1); }
+}
+
+/* Accessibilità: niente movimento per chi lo ha disattivato nel sistema */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .gl-ticker-track { animation: none !important; }
+}
+
+/* ---------- Scrollbar verde come la reference ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgb(var(--c-bg) / 0.7); }
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-acc) / 0.45);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 6px;
+  min-height: 40px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--c-acc) / 0.75); }
+@supports not selector(::-webkit-scrollbar) {
+  html { scrollbar-color: rgb(var(--c-acc) / 0.55) transparent; }
+}
+

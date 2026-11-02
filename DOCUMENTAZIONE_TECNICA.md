@@ -212,3 +212,4 @@ Quando vorrai espandere l'applicazione con nuove feature, ecco i punti di estens
    - Aggiungere un `manifest.json` e un service worker tramite `vite-plugin-pwa` per consentire l'installazione su home screen di iPhone/Android e l'uso 100% offline in palestra.
 4. **Dominio Personalizzato:**
    - Su Cloudflare Pages -> scheda **Custom domains** è possibile collegare con 1 clic un dominio personale acquistato (es. `gymlink.it` o `gymlink.app`) con certificato SSL HTTPS gratuito automatico.
+

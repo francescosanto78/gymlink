@@ -1,86 +1,116 @@
 # GymLink 🏋️‍♂️⚡
 
 > **Workout routines made frictionless.**  
-> Applicazione web open source, mobile-first, per Personal Trainer (PT) e atleti: crea, gestisci e condividi schede di allenamento professionali tramite link unici, senza obbligo di registrazione o login per gli atleti.
+> A mobile-first web app for Personal Trainers (PTs) and athletes: create, manage, and share routine workouts via unique links without mandatory registration or login.
 
-🌐 **Live Demo:** [https://gymlink.pages.dev](https://gymlink.pages.dev)  
-📦 **Repository:** [https://github.com/francescosanto78/gymlink](https://github.com/francescosanto78/gymlink)
-
----
-
-## ✨ Caratteristiche Principali
-
-- **Nessuna Registrazione Obbligatoria (Zero Friction):** I Personal Trainer possono iniziare a comporre una scheda immediatamente. Gli atleti la aprono con un tap sul link.
-- **Link Unici di Condivisione (BaaS Cloud):** Salvataggio su Supabase Cloud con generazione di URL unici e non indicizzabili da Google (`nanoid(10)`).
-- **Condivisione WhatsApp & Stampa PDF:** Condivisione 1-click su WhatsApp con messaggio preformattato ed esportazione PDF pulita per la sala pesi.
-- **Interfaccia Esecuzione Allenamento per l'Atleta:**
-  - Timer di recupero sonoro con sintesi vocale / segnale acustico.
-  - Spunte interattive per serie completate (con persistenza di sessione).
-  - Modalità Focus / Fullscreen per la massima leggibilità durante il workout.
-  - Logo bloccato in sola lettura per evitare uscite accidentali durante le serie.
-- **Database Esercizi Completo:** Ricerca rapida tra centinaia di esercizi divisi per gruppo muscolare, con varianti, note su tempo di esecuzione e RPE.
-- **Console di Manutenzione & Igiene Dati (`/admin`):**
-  - Area riservata e protetta da PIN per l'amministratore.
-  - Filtri 1-click per eliminare routine di test o abbandonate (zombie).
-  - Esportazione completa Backup JSON e **Ripristino / Upload** con operazione di upsert sicuro (non altera gli ID dei link già inviati agli atleti).
-- **GDPR Compliant & Analytics Anonimizzato:** Banner cookie minimale che abilita Google Analytics 4 solo su consenso esplicito dell'utente.
+🌐 **Live Application:** [https://gymlink.pages.dev](https://gymlink.pages.dev)  
+📦 **GitHub Repository:** [https://github.com/francescosanto78/gymlink](https://github.com/francescosanto78/gymlink)  
+⚖️ **License:** [Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)](./LICENSE)
 
 ---
 
-## 🛠️ Stack Tecnologico
-
-- **Frontend:** [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) (Tema personalizzato Emerald Night `#07100d`, accento `#3ee6a0`, Doto dot-matrix typography, animated starfield)
-- **Icone:** [Lucide React](https://lucide.dev/)
-- **Backend as a Service:** [Supabase](https://supabase.com/) (PostgreSQL Cloud con RLS & RPC atomiche)
-- **Analytics:** [Google Analytics 4](https://analytics.google.com/) (integrazione condizionale post-consenso)
-- **Hosting & CI/CD:** [Cloudflare Pages](https://pages.cloudflare.com/) collegato a GitHub con deploy continuo e supporto SPA (`_redirects`)
+### 🌐 Language / Lingua
+- **[English (Current)](#english)**
+- **[Italiano (Leggi in Italiano)](#italiano)**
 
 ---
 
-## 🚀 Avvio in Locale
+<a name="english"></a>
+## 🇬🇧 English
 
-### Prerequisiti
-- [Node.js](https://nodejs.org/) versione 20 o superiore
-- [Git](https://git-scm.com/)
+### ✨ Key Features
 
-### Installazione
+- **Zero-Friction (No Sign-Up Required):** PTs can start building a workout routine immediately. Athletes access their workout with a single tap on the received link.
+- **Unique Shareable Cloud Links:** Workouts are persisted on Supabase Cloud with 10-character cryptographic unique identifiers (`nanoid(10)`). Crawler robots are blocked from indexing private routines.
+- **1-Click WhatsApp & PDF Export:** Formatted sharing message for WhatsApp directly to clients, plus print-ready clean PDF export for gym floors.
+- **Interactive Workout Execution View for Athletes:**
+  - Auditory rest countdown timer with Web Audio API sound alerts.
+  - Interactive completed set checklists (session-preserved).
+  - Distraction-free / Fullscreen focus mode.
+  - Read-only locked navbar logo prevents accidental loss of workout state while exercising.
+- **Comprehensive Exercise Catalog:** Fast search through muscle groups, equipment, movement tempo, and RPE cues.
+- **Hidden Admin & Maintenance Console (`/admin`):**
+  - PIN-protected maintenance suite for the administrator.
+  - 1-click preset pruning filters for test routines and zombie (abandoned) workouts.
+  - Full database JSON Backup export & **Safe JSON Restore/Upsert** (restores deleted workouts keeping original IDs so existing athlete links continue working).
+- **GDPR Compliant & Privacy-First:** Minimal cookie consent banner; Google Analytics 4 is strictly blocked until explicit user opt-in.
+
+### 🛠️ Tech Stack
+
+- **Frontend:** React 18, Vite
+- **Styling:** Tailwind CSS (Custom "Emerald Night" theme `#07100d`, accent `#3ee6a0`, Doto dot-matrix typography, animated starfield)
+- **Icons:** Lucide React
+- **Backend as a Service:** Supabase (PostgreSQL Cloud with RLS & atomic RPCs)
+- **Analytics:** Google Analytics 4 (conditional injection)
+- **Deployment & Hosting:** Cloudflare Pages with Git continuous deployment and SPA redirect routing
+
+### 🚀 Local Development Setup
 
 ```bash
-# 1. Clona il repository
+# 1. Clone the repository
 git clone https://github.com/francescosanto78/gymlink.git
 cd gymlink
 
-# 2. Installa le dipendenze
+# 2. Install dependencies
 npm install
 
-# 3. Configura le variabili d'ambiente
+# 3. Setup environment variables
 cp .env.example .env
-# Inserisci le tue credenziali Supabase, GA4 e PIN Admin in .env
+# Fill in your Supabase credentials, GA4 ID and Admin PIN
 
-# 4. Avvia il server di sviluppo
+# 4. Start local Vite development server
 npm run dev
 ```
 
-L'app sarà disponibile su `http://localhost:5173`.
+### 🔒 Environment Variables
 
----
-
-## 🔒 Variabili d'Ambiente
-
-Nel file `.env` (o nei Secret di Cloudflare Pages) configurare:
-
-| Variabile | Descrizione |
+| Variable | Description |
 |---|---|
-| `VITE_SUPABASE_URL` | URL del progetto Supabase Cloud |
-| `VITE_SUPABASE_ANON_KEY` | Chiave pubblica Anon di Supabase |
-| `VITE_ADMIN_KEY` | PIN segreto per accedere a `/admin` |
-| `VITE_GA_MEASUREMENT_ID` | Measurement ID di Google Analytics (es. `G-XXXXXXXXXX`) |
-| `VITE_WEB3FORMS_ACCESS_KEY` | *(Opzionale)* Chiave Web3Forms per ricezione feedback |
+| `VITE_SUPABASE_URL` | Supabase Cloud project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase Anon public key |
+| `VITE_ADMIN_KEY` | Master secret PIN to unlock `/admin` |
+| `VITE_GA_MEASUREMENT_ID` | Google Analytics 4 Measurement ID (`G-XXXXXXXXXX`) |
+| `VITE_WEB3FORMS_ACCESS_KEY` | *(Optional)* Web3Forms contact key |
+
+### 📄 License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)** license.  
+- **Permitted:** You may view, clone, fork, and adapt the code for non-commercial and educational purposes with proper attribution to Francesco Santo.
+- **Prohibited:** Any commercial use, reselling, monetizing, or proprietary commercial closed distribution by third parties without prior written consent from the author is strictly prohibited.
 
 ---
 
-## 📄 Licenza & Autore
+<a name="italiano"></a>
+## 🇮🇹 Italiano
 
-- **Autore:** [Francesco Santo](https://github.com/francescosanto78)
-- Progetto distribuito sotto licenza **MIT**. Sentiti libero di clonarlo, personalizzarlo e utilizzarlo per la tua attività o palestra!
+### ✨ Caratteristiche Principali
+
+- **Zero Attrito (Nessuna Registrazione Obbligatoria):** I Personal Trainer possono iniziare a comporre una scheda immediatamente. Gli atleti la aprono con un tap sul link ricevuto via WhatsApp.
+- **Link Unici di Condivisione Cloud:** Routine salvate su Supabase Cloud con identificatori unici crittografici a 10 caratteri (`nanoid(10)`). I motori di ricerca sono bloccati dall'indicizzare le schede private.
+- **Condivisione WhatsApp & Stampa PDF in 1 Clic:** Messaggio precompilato per WhatsApp pronto per l'atleta ed esportazione PDF pulita per la sala pesi.
+- **Interfaccia Esecuzione Allenamento per l'Atleta:**
+  - Timer sonoro di recupero con avviso acustico via Web Audio API.
+  - Spunte interattive per le serie completate con persistenza di sessione.
+  - Modalità Focus a tutto schermo ad alto contrasto.
+  - Logo GymLink bloccato in sola lettura per evitare uscite accidentali durante le serie.
+- **Catalogo Esercizi Completo:** Ricerca rapida per gruppo muscolare, attrezzo, note sul tempo di esecuzione e RPE.
+- **Console di Manutenzione Protetta (`/admin`):**
+  - Accesso riservato con PIN per l'amministratore.
+  - Filtri 1-click per eliminare routine di test o abbandonate (zombie).
+  - Esportazione Backup JSON e **Ripristino da Backup con Upsert** (ricrea le schede cancellate mantenendo gli stessi ID, senza rompere i link già inviati agli atleti).
+- **Conformità GDPR:** Banner cookie minimale; Google Analytics 4 viene caricato solo previo consenso esplicito dell'utente.
+
+### 🛠️ Stack Tecnologico
+
+- **Frontend:** React 18, Vite
+- **Stile:** Tailwind CSS (Tema Emerald Night `#07100d`, accento neon `#3ee6a0`, Doto dot-matrix typography, animated starfield)
+- **Icone:** Lucide React
+- **BaaS:** Supabase Cloud (PostgreSQL, RLS e RPC atomiche)
+- **Analytics:** Google Analytics 4 (GDPR-compliant)
+- **Hosting:** Cloudflare Pages (Deploy continuo da GitHub con routing SPA)
+
+### 📄 Licenza
+
+Questo progetto è rilasciato sotto licenza **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**.  
+- **Consentito:** Visionare, clonare, studiare e adattare il codice per scopi personali, di studio o non commerciali con attribuzione all'autore Francesco Santo.
+- **Vietato:** È espressamente vietato qualsiasi uso a scopo di lucro, vendita, distribuzione commerciale o monetizzazione da parte di terzi senza preventiva autorizzazione scritta dell'autore.

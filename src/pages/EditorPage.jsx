@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useLanguage } from '../context/LanguageContext';
+import Modal from '../components/Modal';
 import ExerciseSearchModal from '../components/ExerciseSearchModal';
 import { saveWorkout, getWorkoutById } from '../services/workoutService';
 
@@ -821,113 +822,106 @@ export default function EditorPage() {
         onSelectExercise={handleAddExerciseFromDb}
       />
 
-      {/* Modal Successo Salvataggio (Cloud Supabase + WhatsApp & Link) */}
-      {saveSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm gl-modal-backdrop">
-          <div className="gl-card gl-modal w-full max-w-md p-6 space-y-4">
-            <div className="w-12 h-12 mx-auto rounded-full bg-acc/10 border border-acc/40 grid place-items-center text-acc gl-flash">
-              <Check className="w-6 h-6 stroke-[2.5]" />
+      {/* Modal Successo Salvataggio (Portal Centrato a Tutto Schermo) */}
+      <Modal
+        isOpen={saveSuccessModal}
+        onClose={() => setSaveSuccessModal(false)}
+        variant="center"
+        maxWidth="max-w-md"
+        title="Scheda Salvata sul Cloud!"
+        subtitle="Il link crittografico è attivo e pronto da inviare al tuo atleta."
+        icon={<Check className="w-6 h-6 stroke-[2.5]" />}
+      >
+        <div className="space-y-4">
+          {/* Link Box diretto da copiare */}
+          <div className="p-3 rounded-xl border border-acc/40 bg-bg2 space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-mono text-dim">
+              <span>LINK PRIVATO DEL CLIENTE:</span>
+              <span className="text-acc font-bold">SOLA LETTURA</span>
             </div>
-
-            <div className="text-center space-y-1.5">
-              <h3 className="font-dot font-black text-xl text-fg uppercase tracking-wide">
-                Scheda Salvata sul Cloud!
-              </h3>
-              <p className="text-xs text-dim">
-                Il link crittografico è attivo e pronto da inviare al tuo cliente.
-              </p>
-            </div>
-
-            {/* Link Box diretto da copiare */}
-            <div className="p-3 rounded-lg border border-acc/40 bg-bg2 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-mono text-dim">
-                <span>LINK PRIVATO DEL CLIENTE:</span>
-                <span className="text-acc font-bold">SOLA LETTURA</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={`${window.location.origin}/w/${workout.id}`}
-                  className="gl-input !h-8 font-mono text-xs text-acc selection:bg-acc/30 flex-1 truncate"
-                  onClick={(e) => e.target.select()}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fullUrl = `${window.location.origin}/w/${workout.id}`;
-                    navigator.clipboard.writeText(fullUrl);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2500);
-                  }}
-                  className="gl-btn !h-8 !px-3 !text-xs font-mono font-bold shrink-0 hover:!border-acc hover:!text-acc"
-                  title="Copia link"
-                >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-acc" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? 'Copiato!' : 'Copia'}</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg border border-sline bg-bg2/60 space-y-1 font-mono text-xs">
-              <div className="flex justify-between text-dim">
-                <span>TITOLO:</span>
-                <span className="text-fg font-bold truncate max-w-[200px]">{workout.title}</span>
-              </div>
-              <div className="flex justify-between text-dim">
-                <span>ID UNIVOCO:</span>
-                <span className="text-acc font-bold">{workout.id}</span>
-              </div>
-              <div className="flex justify-between text-dim">
-                <span>DESTINATARIO:</span>
-                <span className="text-fg">{workout.clientName || 'Atleta'}</span>
-              </div>
-              <div className="flex justify-between text-dim">
-                <span>ESERCIZI:</span>
-                <span className="text-acc font-bold">{totalExercises}</span>
-              </div>
-            </div>
-
-            {/* Azioni Condivisione & Navigazione */}
-            <div className="space-y-2 pt-1">
-              {/* Tasto Primario WhatsApp */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}/w/${workout.id}`}
+                className="gl-input !h-9 font-mono text-xs text-acc selection:bg-acc/30 flex-1 truncate"
+                onClick={(e) => e.target.select()}
+              />
               <button
                 type="button"
                 onClick={() => {
-                  const title = workout.title || 'Scheda di Allenamento';
-                  const pt = workout.ptName ? ` preparata da ${workout.ptName}` : '';
-                  const client = workout.clientName ? `Ciao ${workout.clientName}! ` : '';
                   const fullUrl = `${window.location.origin}/w/${workout.id}`;
-                  const text = encodeURIComponent(`${client}Ecco la tua nuova scheda di allenamento "${title}"${pt}:\n${fullUrl}`);
-                  window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+                  navigator.clipboard.writeText(fullUrl);
+                  setCopiedLink(true);
+                  setTimeout(() => setCopiedLink(false), 2500);
                 }}
-                className="gl-btn-primary w-full justify-center !h-9 text-xs font-mono font-bold gap-2"
+                className="gl-btn !h-9 !px-3 !text-xs font-mono font-bold shrink-0 hover:!border-acc hover:!text-acc"
+                title="Copia link"
               >
-                <Share2 className="w-4 h-4" />
-                <span>Condividi su WhatsApp</span>
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-acc" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLink ? 'Copiato!' : 'Copia'}</span>
               </button>
+            </div>
+          </div>
 
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/w/${workout.id}`, { state: { fromPt: true } })}
-                  className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Vedi come Cliente</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSaveSuccessModal(false)}
-                  className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
-                >
-                  Continua Modifica
-                </button>
-              </div>
+          <div className="p-3 rounded-xl border border-sline bg-bg2/60 space-y-1.5 font-mono text-xs">
+            <div className="flex justify-between text-dim">
+              <span>TITOLO:</span>
+              <span className="text-fg font-bold truncate max-w-[200px]">{workout.title}</span>
+            </div>
+            <div className="flex justify-between text-dim">
+              <span>ID UNIVOCO:</span>
+              <span className="text-acc font-bold">{workout.id}</span>
+            </div>
+            <div className="flex justify-between text-dim">
+              <span>DESTINATARIO:</span>
+              <span className="text-fg">{workout.clientName || 'Atleta'}</span>
+            </div>
+            <div className="flex justify-between text-dim">
+              <span>ESERCIZI:</span>
+              <span className="text-acc font-bold">{totalExercises}</span>
+            </div>
+          </div>
+
+          {/* Azioni Condivisione & Navigazione */}
+          <div className="space-y-2 pt-2">
+            {/* Tasto Primario WhatsApp */}
+            <button
+              type="button"
+              onClick={() => {
+                const title = workout.title || 'Scheda di Allenamento';
+                const pt = workout.ptName ? ` preparata da ${workout.ptName}` : '';
+                const client = workout.clientName ? `Ciao ${workout.clientName}! ` : '';
+                const fullUrl = `${window.location.origin}/w/${workout.id}`;
+                const text = encodeURIComponent(`${client}Ecco la tua nuova scheda di allenamento "${title}"${pt}:\n${fullUrl}`);
+                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+              }}
+              className="gl-btn-primary w-full justify-center !h-10 text-xs font-mono font-bold gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Condividi su WhatsApp</span>
+            </button>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => navigate(`/w/${workout.id}`, { state: { fromPt: true } })}
+                className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Vedi come Cliente</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSaveSuccessModal(false)}
+                className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
+              >
+                Continua Modifica
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
     </div>
   );

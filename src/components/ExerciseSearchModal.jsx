@@ -324,24 +324,24 @@ export default function ExerciseSearchModal({ isOpen, onClose, onSelectExercise 
                   >
                     <div className="p-2 sm:p-3 flex items-center justify-between gap-2.5 sm:gap-3">
 
-                      {/* 1. Miniatura Statica Leggera (Dimensione fissa blindata su mobile e desktop) */}
+                      {/* 1. Miniatura Statica Leggera (Dimensione raddoppiata per massima leggibilità) */}
                       <div
                         onClick={() => setPreviewExercise(isPreviewing ? null : ex)}
-                        className="w-12 h-12 sm:w-14 sm:h-14 min-w-[48px] sm:min-w-[56px] max-w-[48px] sm:max-w-[56px] min-h-[48px] sm:min-h-[56px] max-h-[48px] sm:max-h-[56px] rounded-lg border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-0.5 flex items-center justify-center relative group"
+                        className="w-20 h-20 sm:w-24 sm:h-24 min-w-[80px] sm:min-w-[96px] max-w-[80px] sm:max-w-[96px] min-h-[80px] sm:min-h-[96px] max-h-[80px] sm:max-h-[96px] rounded-xl border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-1 flex items-center justify-center relative group shadow-sm"
                         title="Clicca per ingrandire animazione"
                       >
                         {staticImgUrl ? (
                           <img
                             src={staticImgUrl}
                             alt={ex.name}
-                            className="w-full h-full object-contain rounded"
+                            className="w-full h-full object-contain rounded-lg"
                             loading="lazy"
                           />
                         ) : (
-                          <Dumbbell className="w-4 h-4 text-dim opacity-40" />
+                          <Dumbbell className="w-6 h-6 text-dim opacity-40" />
                         )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded">
-                          <Eye className="w-3.5 h-3.5 text-acc" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                          <Eye className="w-5 h-5 text-acc" />
                         </div>
                       </div>
 

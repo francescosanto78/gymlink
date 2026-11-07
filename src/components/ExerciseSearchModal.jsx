@@ -8,7 +8,8 @@ import {
   getExerciseImageUrl,
   getExerciseDescription,
   translateTarget,
-  translateEquipment
+  translateEquipment,
+  getExerciseDisplayName
 } from '../services/exerciseService';
 import Modal from './Modal';
 
@@ -132,15 +133,17 @@ export default function ExerciseSearchModal({ isOpen, onClose, onSelectExercise 
     const formatted = {
       id: `ex_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       exerciseDbId: exercise.id,
-      name: exercise.name,
+      name: getExerciseDisplayName(exercise.name, modalLang),
       sets: '3',
       reps: '10',
       weight: '',
       rest: '90"',
       notes: '',
+      exerciseId: exercise.id,
       gifUrl: getExerciseMediaUrl(exercise.gif_url),
       imageUrl: getExerciseImageUrl(exercise.image),
       description: getExerciseDescription(exercise, modalLang),
+      instructions: exercise.instructions || null,
       target: translateTarget(exercise.target, modalLang),
       equipment: translateEquipment(exercise.equipment, modalLang),
       isCustom: false
@@ -349,7 +352,7 @@ export default function ExerciseSearchModal({ isOpen, onClose, onSelectExercise 
                       <div className="min-w-0 flex-1 pr-1">
                         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                           <span className="font-mono text-xs sm:text-sm font-bold text-fg capitalize truncate block max-w-full">
-                            {ex.name}
+                            {getExerciseDisplayName(ex.name, modalLang)}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 flex-wrap">

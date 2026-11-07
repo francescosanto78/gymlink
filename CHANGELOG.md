@@ -5,6 +5,46 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/)
 
 ---
 
+## [1.1.0] - 2026-11-07 (Enhanced Athlete Experience & Progression Analytics)
+
+Aggiornamento mirato al miglioramento dell'esperienza utente in sala pesi, tracciamento del sovraccarico progressivo e supporto multilingua completo.
+
+### ✨ Novità & Funzionalità Core (v1.1)
+- **Doppia Modalità di Visualizzazione (Elenco Compatto vs Dettagli Estesi):**
+  - Switcher rapido nella scheda per passare dalla modalità **Elenco** (sintetica, titolo ed esercizio in grassetto ingrandito con numero identificativo `#`, serie x reps e timer recupero a un tocco) alla modalità **Dettagli** con dimostrazioni biomeccaniche complete.
+  - La preferenza utente viene memorizzata localmente (`gymlink_view_mode`).
+- **Tracciamento Sovraccarico Progressivo & Aggiornamento Pesi:**
+  - Gli atleti possono modificare il carico direttamente durante l'allenamento con sincronizzazione istantanea su cloud.
+  - **Regola di consolidamento giornaliero:** Più modifiche apportate nello stesso giorno vengono unificate sull'ultimo carico registrato, evitando frammentazioni.
+  - Alla prima modifica del carico viene automaticamente congelato il valore di partenza come punto base storico.
+- **Grafico di Progressione & Trendline a 3 Mesi:**
+  - Modale interattiva SVG per singolo esercizio con visualizzazione dell'andamento dei carichi a finestre trimestrali (~12 settimane).
+  - Calcolo matematico della linea di tendenza (regressione lineare `m*x + q`) con indicazione di andamento (positivo, calante, stabile).
+  - Navigazione temporale a ritroso (`← Trimestre Prec.` / `Trimestre Succ. →`) e date esatte sotto ogni punto.
+  - Messaggio informativo di guida iniziale quando l'esercizio non ha ancora registrato variazioni.
+- **Esportazione Globale Dati & Analisi per PT / AI:**
+  - Modulo "📊 Progressioni & Scarica Dati" accessibile dalla testata della scheda.
+  - Download di file CSV Excel con struttura tabellare analitica: una riga per ogni variazione con colonne ordinate (`Esercizio, Target, Serie, Reps, Peso, Data`).
+  - Pulsante 1-click per copiare la tabella formattata pronta per consultare un'AI (ChatGPT, Claude, Gemini) o il proprio Personal Trainer.
+- **Supporto Template Cross-Device ("Usa come Template"):**
+  - Possibilità di clonare qualsiasi scheda esistente incollando link o ID nella Home (anche da un dispositivo diverso dal creatore).
+  - La duplicazione azzera il nome del cliente e lo storico carichi per il nuovo atleta, generando un nuovo ID univoco (`nanoid(10)`).
+- **Internazionalizzazione e Traduzione Completa Dinamica (IT / EN / ES):**
+  - Normalizzazione bidirezionale di tutti i gruppi muscolari e delle attrezzature (`translateTarget` & `translateEquipment`).
+  - Traduzione automatica dei titoli degli esercizi standard del catalogo (`getExerciseDisplayName`) tra Italiano, Inglese e Spagnolo.
+  - Sincronizzazione dinamica reattiva nell'Editor e nella Scheda Cliente al cambio lingua nella navbar.
+  - Traduzione completa di descrizioni biomeccaniche e spiegazioni del movimento.
+- **Aggiornamento Guide e Manuali:**
+  - **Guida Atleta (`/guida`):** Aggiornata con 10 passaggi illustrati (modalità elenco/dettagli, tracciamento pesi, grafici trimestrali, export CSV e sicurezza del link personale).
+  - **Manuale Personal Trainer (`/tutorial`):** Aggiornato alla v1.1 con sezione dedicata al sovraccarico progressivo, template cross-device ed export per AI/periodizzazione.
+- **Miglioramenti Grafici & Privacy:**
+  - Tema Chiaro impostato come default iniziale per nuovi visitatori, preservando le scelte manuali in `localStorage`.
+  - Stacco visivo migliorato per le card degli esercizi sia in modalità scura (card sopraelevate con sfondo profondo e bordi smeraldo) che in modalità chiara (ombreggiatura volumetrica morbida).
+  - Avviso di riservatezza link aggiunto nella modale di salvataggio e nel messaggio precompilato di WhatsApp.
+  - Icona GitHub posizionata esclusivamente nel Footer.
+
+---
+
 ## [1.0.0] - 2026-11-05 (Production Release)
 
 Punto fermo di rilascio stabile della prima versione di produzione di **GymLink**.
@@ -31,3 +71,4 @@ Punto fermo di rilascio stabile della prima versione di produzione di **GymLink*
 - **Hosting & CI/CD:** Distribuzione continua su **Cloudflare Pages** con routing SPA (`_redirects`) e supporto Node 20.
 
 ---
+

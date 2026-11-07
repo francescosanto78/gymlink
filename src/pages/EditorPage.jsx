@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import Modal from '../components/Modal';
 import ExerciseSearchModal from '../components/ExerciseSearchModal';
 import { saveWorkout, getWorkoutById } from '../services/workoutService';
+import { translateTarget, translateEquipment, getExerciseDisplayName } from '../services/exerciseService';
 
 const DRAFT_KEY = 'gymlink_draft';
 const RECENT_KEY = 'gymlink_recent_workouts';
@@ -33,6 +34,7 @@ export default function EditorPage() {
   const params = useParams();
 
   const editId = params.id || searchParams.get('id');
+  const templateId = searchParams.get('templateId');
 
   // Stato principale della Scheda
   const [workout, setWorkout] = useState(() => {
@@ -50,10 +52,39 @@ export default function EditorPage() {
       }
     }
 
+    // Se stiamo usando una scheda come template, clona subito la base con nuovo ID
+    if (templateId) {
+      try {
+        const stored = localStorage.getItem(RECENT_KEY);
+        if (stored) {
+          const list = JSON.parse(stored);
+          const found = list.find((w) => w.id === templateId);
+          if (found) {
+            return {
+              ...found,
+              id: nanoid(10),
+              title: `${found.title || 'Scheda'} (Copia)`,
+              clientName: '',
+              date: getTodayString(),
+              days: Array.isArray(found.days) ? found.days.map((d) => ({
+                ...d,
+                exercises: Array.isArray(d.exercises) ? d.exercises.map((ex) => ({
+                  ...ex,
+                  weightHistory: [] // Reset storico pesi per il nuovo atleta
+                })) : []
+              })) : [createEmptyDay(1)]
+            };
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
     // Altrimenti tenta il ripristino della bozza
     try {
       const draft = localStorage.getItem(DRAFT_KEY);
-      if (draft && !editId) {
+      if (draft && !editId && !templateId) {
         return JSON.parse(draft);
       }
     } catch (e) {
@@ -72,22 +103,77 @@ export default function EditorPage() {
     };
   });
 
-  // Se c'è un editId e non era nei recenti locali, caricalo da Supabase Cloud
+  // Se c'è un editId o templateId e non era nei recenti locali, caricalo da Supabase Cloud
   useEffect(() => {
-    if (!editId) return;
+    const targetId = editId || templateId;
+    if (!targetId) return;
     let isMounted = true;
     (async () => {
       try {
-        const remote = await getWorkoutById(editId);
+        const remote = await getWorkoutById(targetId);
         if (remote && isMounted) {
-          setWorkout(remote);
+          if (templateId) {
+            setWorkout({
+              ...remote,
+              id: nanoid(10),
+              title: `${remote.title || 'Scheda'} (Copia)`,
+              clientName: '',
+              date: getTodayString(),
+              days: Array.isArray(remote.days) ? remote.days.map((d) => ({
+                ...d,
+                exercises: Array.isArray(d.exercises) ? d.exercises.map((ex) => ({
+                  ...ex,
+                  weightHistory: []
+                })) : []
+              })) : [createEmptyDay(1)]
+            });
+          } else {
+            setWorkout(remote);
+          }
         }
       } catch (err) {
         console.warn('Errore fetch workout remoto:', err);
       }
     })();
     return () => { isMounted = false; };
-  }, [editId]);
+  }, [editId, templateId]);
+
+  // Sincronizzazione dinamica lingua esercizi nell'editor quando si cambia lingua nella navbar
+  useEffect(() => {
+    setWorkout((prev) => {
+      if (!prev || !Array.isArray(prev.days)) return prev;
+      let hasChanges = false;
+      const updatedDays = prev.days.map((day) => {
+        if (!Array.isArray(day.exercises)) return day;
+        const updatedExercises = day.exercises.map((ex) => {
+          if (!ex.isCustom && ex.name) {
+            const translatedName = getExerciseDisplayName(ex.name, lang);
+            const translatedTarget = translateTarget(ex.target, lang);
+            const translatedEquip = translateEquipment(ex.equipment, lang);
+            const translatedDesc = getExerciseDescription(ex, lang);
+            if (
+              (translatedName && translatedName !== ex.name) ||
+              (translatedTarget && translatedTarget !== ex.target) ||
+              (translatedEquip && translatedEquip !== ex.equipment) ||
+              (translatedDesc && translatedDesc !== ex.description)
+            ) {
+              hasChanges = true;
+              return {
+                ...ex,
+                name: translatedName || ex.name,
+                target: translatedTarget || ex.target,
+                equipment: translatedEquip || ex.equipment,
+                description: translatedDesc || ex.description
+              };
+            }
+          }
+          return ex;
+        });
+        return { ...day, exercises: updatedExercises };
+      });
+      return hasChanges ? { ...prev, days: updatedDays } : prev;
+    });
+  }, [lang]);
 
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -309,13 +395,10 @@ export default function EditorPage() {
             className="gl-btn !h-8 !px-2.5 !rounded-lg text-dim hover:text-acc font-mono text-[11px] tracking-wider uppercase inline-flex items-center gap-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Home</span>
+            <span>{t('btnBackHome')}</span>
           </Link>
           <div className="flex items-center gap-2">
-            <span className="font-dot font-black text-lg text-fg tracking-wide">EDITOR SCHEDA PT</span>
-            <span className="gl-tag !text-[8.5px] !py-0.5" style={{ '--fc': 'rgb(var(--c-acc))' }}>
-              STEP 2 DEV
-            </span>
+            <span className="font-dot font-black text-lg text-fg tracking-wide">{t('editorBadge')}</span>
           </div>
         </div>
 
@@ -350,7 +433,7 @@ export default function EditorPage() {
             className="gl-btn-primary !h-8 !px-4 !rounded-lg !text-[11px]"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>Salva Scheda</span>
+            <span>{t('btnSaveWorkout')}</span>
           </button>
         </div>
       </div>
@@ -597,12 +680,12 @@ export default function EditorPage() {
                         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                           {ex.target && (
                             <span className="text-[10px] font-mono text-acc/80 uppercase">
-                              {ex.target}
+                              {translateTarget(ex.target, lang)}
                             </span>
                           )}
                           {ex.equipment && (
                             <span className="text-[10px] font-mono text-dim uppercase">
-                              · {ex.equipment}
+                              · {translateEquipment(ex.equipment, lang)}
                             </span>
                           )}
                           {ex.gifUrl && (
@@ -811,7 +894,7 @@ export default function EditorPage() {
           className="gl-btn-primary"
         >
           <Save className="w-4 h-4" />
-          <span>Salva Scheda & Continua</span>
+          <span>{t('btnSaveWorkout')}</span>
         </button>
       </div>
 
@@ -828,8 +911,8 @@ export default function EditorPage() {
         onClose={() => setSaveSuccessModal(false)}
         variant="center"
         maxWidth="max-w-md"
-        title="Scheda Salvata sul Cloud!"
-        subtitle="Il link crittografico è attivo e pronto da inviare al tuo atleta."
+        title={t('saveSuccessTitle')}
+        subtitle={t('saveSuccessDesc')}
         icon={<Check className="w-6 h-6 stroke-[2.5]" />}
       >
         <div className="space-y-4">
@@ -862,6 +945,9 @@ export default function EditorPage() {
                 <span>{copiedLink ? 'Copiato!' : 'Copia'}</span>
               </button>
             </div>
+            <p className="text-[10px] font-mono text-dim/90 bg-bg/60 p-2 rounded-lg border border-sline/50 leading-relaxed">
+              🔒 <strong>Nota:</strong> {t('warningPersonalLink')}
+            </p>
           </div>
 
           <div className="p-3 rounded-xl border border-sline bg-bg2/60 space-y-1.5 font-mono text-xs">
@@ -893,7 +979,9 @@ export default function EditorPage() {
                 const pt = workout.ptName ? ` preparata da ${workout.ptName}` : '';
                 const client = workout.clientName ? `Ciao ${workout.clientName}! ` : '';
                 const fullUrl = `${window.location.origin}/w/${workout.id}`;
-                const text = encodeURIComponent(`${client}Ecco la tua nuova scheda di allenamento "${title}"${pt}:\n${fullUrl}`);
+                const text = encodeURIComponent(
+                  `${client}Ecco la tua nuova scheda di allenamento "${title}"${pt}:\n${fullUrl}\n\n🔒 Nota: questo link è strettamente personale, conservalo e non condividerlo con altri per evitare modifiche ai tuoi dati di allenamento.`
+                );
                 window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
               }}
               className="gl-btn-primary w-full justify-center !h-10 text-xs font-mono font-bold gap-2"
@@ -909,14 +997,14 @@ export default function EditorPage() {
                 className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>Vedi come Cliente</span>
+                <span>{t('btnViewAsClient')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSaveSuccessModal(false)}
                 className="gl-btn flex-1 justify-center text-xs !h-9 font-mono"
               >
-                Continua Modifica
+                {t('btnContinueEditing')}
               </button>
             </div>
           </div>

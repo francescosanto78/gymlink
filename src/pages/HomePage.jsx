@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, FileEdit, Clock, Copy, Check, Dumbbell, Info, X, BookOpen, ExternalLink, Eye } from 'lucide-react';
+import { Plus, Search, FileEdit, Clock, Copy, Check, Dumbbell, Info, X, BookOpen, ExternalLink, Eye, CopyPlus } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function HomePage() {
@@ -81,8 +81,8 @@ export default function HomePage() {
   };
 
   // Helper to extract workout ID from URL or bare ID
-  const handleOpenExisting = (e) => {
-    e.preventDefault();
+  const handleOpenExisting = (e, mode = 'edit') => {
+    if (e && e.preventDefault) e.preventDefault();
     setInputError('');
 
     const raw = workoutInput.trim();
@@ -101,7 +101,11 @@ export default function HomePage() {
       return;
     }
 
-    navigate(`/edit/${extractedId}`);
+    if (mode === 'template') {
+      navigate(`/editor?templateId=${extractedId}`);
+    } else {
+      navigate(`/edit/${extractedId}`);
+    }
   };
 
   const handleCopyLink = (id) => {
@@ -116,11 +120,11 @@ export default function HomePage() {
 
   return (
     <div className="gl-page-in max-w-[1100px] mx-auto px-4 pt-4 pb-10 space-y-4">
-      
+
       {/* ---------- HERO ---------- */}
       <section className="gl-panel overflow-hidden px-5 sm:px-7 pt-6 pb-6 gl-rise">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          
+
           {/* Colonna Sinistra: Testi e Azioni */}
           <div className="lg:col-span-8 space-y-3.5">
             <div className="gl-eyebrow flex items-center gap-2">
@@ -141,9 +145,8 @@ export default function HomePage() {
             <div className="min-h-[2.4em] flex items-center">
               {phase !== 'done' ? (
                 <p
-                  className={`text-[13px] text-dim font-mono leading-relaxed transition-all duration-500 ${
-                    phase === 'fading_intro' ? 'opacity-0 -translate-y-1.5' : 'opacity-100 translate-y-0'
-                  }`}
+                  className={`text-[13px] text-dim font-mono leading-relaxed transition-all duration-500 ${phase === 'fading_intro' ? 'opacity-0 -translate-y-1.5' : 'opacity-100 translate-y-0'
+                    }`}
                 >
                   <span className="gl-caret text-acc">{typedIntro}</span>
                 </p>
@@ -208,7 +211,7 @@ export default function HomePage() {
                   </div>
                   <p className="text-xs text-dim">{t('editBoxDesc')}</p>
 
-                  <form onSubmit={handleOpenExisting} className="flex flex-col sm:flex-row gap-2">
+                  <form onSubmit={(e) => handleOpenExisting(e, 'edit')} className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1 group">
                       <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dim group-focus-within:text-acc transition-colors pointer-events-none" />
                       <input
@@ -224,12 +227,22 @@ export default function HomePage() {
                         aria-invalid={!!inputError}
                       />
                     </div>
-                    <button
-                      type="submit"
-                      className="gl-btn !h-9 !rounded-[10px] !px-4 justify-center font-mono !text-[11px] font-bold tracking-wider uppercase !border-acc/50 !text-acc bg-acc/5 hover:bg-acc/15"
-                    >
-                      {t('btnOpenWorkout')}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="gl-btn !h-9 !rounded-[10px] !px-3.5 justify-center font-mono !text-[11px] font-bold tracking-wider uppercase !border-acc/50 !text-acc bg-acc/5 hover:bg-acc/15"
+                      >
+                        {t('btnOpenWorkout')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenExisting(e, 'template')}
+                        className="gl-btn !h-9 !rounded-[10px] !px-3 justify-center font-mono !text-[11px] font-bold tracking-wider uppercase text-dim hover:text-acc hover:border-acc"
+                        title="Clona come nuova scheda per un altro cliente"
+                      >
+                        Usa come Template
+                      </button>
+                    </div>
                   </form>
 
                   {inputError && (
@@ -257,7 +270,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="gl-dark-only gl-card w-full max-w-[260px] p-2.5 bg-bg/80 border-acc/30 shadow-[0_0_30px_-10px_var(--glow)]">
-              
+
               {/* Header Card con LED e slogan */}
               <div className="flex items-center justify-between pb-2 mb-2 border-b border-sline/70">
                 <div className="flex items-center gap-1.5">
@@ -392,6 +405,14 @@ export default function HomePage() {
                         >
                           <FileEdit className="w-3 h-3 text-acc" />
                           <span>Modifica</span>
+                        </Link>
+                        <Link
+                          to={`/editor?templateId=${item.id}`}
+                          className="gl-btn !h-6 !text-[11px] hover:!border-acc"
+                          title="Usa questa scheda come base per un nuovo cliente"
+                        >
+                          <CopyPlus className="w-3 h-3 text-acc" />
+                          <span>Usa come Template</span>
                         </Link>
                         <button
                           onClick={() => handleCopyLink(item.id)}

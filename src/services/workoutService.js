@@ -129,6 +129,92 @@ export async function trackWorkoutView(id) {
 }
 
 /**
+ * Aggiorna il carico di un esercizio salvando il nuovo punto nello storico pesi (weightHistory).
+ * Operazione sicura sia per l'atleta che per il PT.
+ * @param {string} workoutId - ID della scheda
+ * @param {string} exerciseId - ID univoco dell'esercizio da aggiornare
+ * @param {string} newWeightStr - Nuovo valore inserito (es. "75 kg" o "75")
+ * @returns {Promise<{ success: boolean, updatedWorkout?: any }>}
+ */
+export async function updateExerciseWeight(workoutId, exerciseId, newWeightStr) {
+  if (!workoutId || !exerciseId) return { success: false };
+
+  // Parse numerico approssimativo del carico per la trendline
+  const cleanNumMatch = String(newWeightStr).replace(',', '.').match(/[-+]?\d*\.?\d+/);
+  const numericWeight = cleanNumMatch ? parseFloat(cleanNumMatch[0]) : null;
+  const todayIso = new Date().toISOString().split('T')[0];
+
+  const currentWorkout = await getWorkoutById(workoutId);
+  if (!currentWorkout || !Array.isArray(currentWorkout.days)) {
+    return { success: false };
+  }
+
+  let found = false;
+  const updatedDays = currentWorkout.days.map((day) => {
+    if (!Array.isArray(day.exercises)) return day;
+    const updatedExercises = day.exercises.map((ex) => {
+      if (ex.id === exerciseId) {
+        found = true;
+        const prevHistory = Array.isArray(ex.weightHistory) ? ex.weightHistory : [];
+        
+        // Se la cronologia è vuota e l'esercizio aveva già un peso di partenza registrato alla creazione della scheda,
+        // inseriamo prima il punto base iniziale (con data creazione scheda o 7 giorni fa se oggi)
+        const initialPoints = [];
+        if (prevHistory.length === 0 && ex.weight && ex.weight !== 'A sensazione') {
+          const initMatch = String(ex.weight).replace(',', '.').match(/[-+]?\d*\.?\d+/);
+          const initNum = initMatch ? parseFloat(initMatch[0]) : null;
+          const creationDate = currentWorkout.date || todayIso;
+          initialPoints.push({
+            date: creationDate,
+            weight: initNum,
+            raw: String(ex.weight).trim(),
+            isInitial: true,
+            timestamp: new Date(creationDate).getTime() || (Date.now() - 86400000 * 7)
+          });
+        }
+
+        const newPoint = {
+          date: todayIso,
+          weight: numericWeight,
+          raw: String(newWeightStr).trim(),
+          timestamp: Date.now()
+        };
+
+        // Regola dello stesso giorno: se esiste già una variazione nella stessa data (todayIso),
+        // aggiorna quella variazione mantenendo solo l'ultimo valore del giorno!
+        const existingSameDayIdx = prevHistory.findIndex((p) => p.date === todayIso);
+        let nextHistory;
+        if (existingSameDayIdx >= 0) {
+          nextHistory = [...prevHistory];
+          nextHistory[existingSameDayIdx] = newPoint;
+        } else {
+          nextHistory = [...initialPoints, ...prevHistory, newPoint];
+        }
+
+        return {
+          ...ex,
+          weight: String(newWeightStr).trim(),
+          weightHistory: nextHistory
+        };
+      }
+      return ex;
+    });
+    return { ...day, exercises: updatedExercises };
+  });
+
+  if (!found) return { success: false };
+
+  const updatedPayload = {
+    ...currentWorkout,
+    days: updatedDays
+  };
+
+  await saveWorkout(updatedPayload);
+  return { success: true, updatedWorkout: updatedPayload };
+}
+
+
+/**
  * Elimina una scheda (dal Cloud Supabase e dalla cache locale).
  */
 export async function deleteWorkout(id) {

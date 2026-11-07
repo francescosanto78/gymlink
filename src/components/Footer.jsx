@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, ShieldAlert, Linkedin, Database, Dumbbell } from 'lucide-react';
+import { MessageSquare, ShieldAlert, Linkedin, Database, Dumbbell, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import FeedbackModal from './FeedbackModal';
@@ -31,6 +31,17 @@ export default function Footer() {
               >
                 <span>{t('authorName')}</span>
                 <Linkedin className="w-3.5 h-3.5 text-[#0a8fd8] group-hover:text-acc transition-colors" />
+              </a>
+              <span className="text-line2">•</span>
+              <a
+                href="https://github.com/francescosanto78/gymlink"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 text-dim hover:text-fg font-semibold transition-colors"
+                title="Repository GitHub di GymLink"
+              >
+                <Github className="w-3.5 h-3.5 group-hover:text-acc transition-colors" />
+                <span>GitHub</span>
               </a>
             </div>
 

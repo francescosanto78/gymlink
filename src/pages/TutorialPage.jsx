@@ -19,7 +19,7 @@ export default function TutorialPage() {
           <span>{t('tutorialBackHome')}</span>
         </Link>
         <span className="gl-tag" style={{ '--fc': 'rgb(var(--c-acc))' }}>
-          PT MANUAL • V1.0
+          PT MANUAL • V1.1
         </span>
       </div>
 
@@ -128,13 +128,37 @@ export default function TutorialPage() {
           </ul>
         </section>
 
+        {/* Blocco 6: Nuove Funzionalità v1.1 - Progressioni e Dati */}
+        <section className="gl-card p-5 sm:p-6 space-y-3" style={{ '--fc': 'rgb(var(--c-acc))' }}>
+          <div className="flex items-center gap-2.5 border-b border-sline/70 pb-3">
+            <span className="w-6 h-6 rounded-md bg-acc/10 border border-acc/30 text-acc font-dot font-black text-xs grid place-items-center">
+              6
+            </span>
+            <h2 className="font-dot font-extrabold text-[16px] tracking-wide text-fg">
+              {t('tutSec6Title')}
+            </h2>
+          </div>
+          <ul className="space-y-2 text-xs font-mono text-dim leading-relaxed list-disc list-inside">
+            <li><strong className="text-fg">{t('tutSec6P1')}</strong></li>
+            <li>{t('tutSec6P2')}</li>
+            <li>{t('tutSec6P3')}</li>
+          </ul>
+        </section>
+
       </div>
 
-      {/* Box CTA di Ritorno */}
-      <div className="pt-4 flex justify-center">
+      {/* Box CTA di Ritorno & Link Guida Atleta */}
+      <div className="pt-4 flex flex-col items-center gap-3">
         <Link to="/" className="gl-btn-primary">
           <Plus className="w-4 h-4" strokeWidth={2.6} />
           <span>{t('tutorialStartNow')}</span>
+        </Link>
+        <Link
+          to="/guida"
+          className="text-xs font-mono text-dim hover:text-acc inline-flex items-center gap-1.5 transition-colors mt-1"
+        >
+          <span>Vuoi vedere cosa legge il tuo cliente?</span>
+          <span className="underline font-bold text-fg">Apri la Guida per l'Atleta ➔</span>
         </Link>
       </div>
 

@@ -14,7 +14,7 @@ export function ThemeProvider({ children }) {
     } catch (e) {
       console.warn(e);
     }
-    return 'dark'; // Default: Emerald Night
+    return 'light'; // Default: Tema Chiaro
   });
 
   useEffect(() => {

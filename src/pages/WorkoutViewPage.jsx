@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
-import { 
-  Dumbbell, Calendar, User, FileEdit, Clock, CheckCircle2, ChevronDown, 
-  ChevronUp, Eye, Share2, Copy, Check, Printer, ArrowLeft, ArrowRight, 
-  AlertCircle, ShieldCheck, Play, Pause, RotateCcw, Volume2
+import {
+  Dumbbell, Calendar, User, FileEdit, Clock, CheckCircle2, ChevronDown,
+  ChevronUp, Eye, Share2, Copy, Check, Printer, ArrowLeft, ArrowRight,
+  AlertCircle, ShieldCheck, Play, Pause, RotateCcw, Volume2,
+  LayoutList, LayoutGrid, CopyPlus, TrendingUp, BarChart3, Edit3, BookOpen
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { getExerciseImageUrl, getExerciseMediaUrl } from '../services/exerciseService';
+import { getExerciseImageUrl, getExerciseMediaUrl, translateTarget, translateEquipment, getExerciseDescription, getExerciseDisplayName, fetchExercises } from '../services/exerciseService';
 import { playTimerCompleteSound } from '../utils/sound';
-import { getWorkoutById, trackWorkoutView } from '../services/workoutService';
+import { getWorkoutById, trackWorkoutView, updateExerciseWeight } from '../services/workoutService';
+import ExerciseProgressModal from '../components/ExerciseProgressModal';
+import GlobalProgressExportModal from '../components/GlobalProgressExportModal';
 
 const RECENT_KEY = 'gymlink_recent_workouts';
 
@@ -201,26 +204,29 @@ function normalizeWorkout(raw, fallbackId) {
 
   const days = Array.isArray(raw.days) && raw.days.length > 0
     ? raw.days.map((d, i) => ({
-        id: d?.id || `day_${i + 1}`,
-        title: d?.title || `Giorno ${String.fromCharCode(65 + i)}`,
-        exercises: Array.isArray(d?.exercises)
-          ? d.exercises.map((ex, j) => ({
-              id: ex?.id || `ex_${i}_${j}`,
-              name: ex?.name || 'Esercizio',
-              sets: ex?.sets || '—',
-              reps: ex?.reps || '—',
-              weight: ex?.weight || '',
-              rest: ex?.rest || '60"',
-              notes: ex?.notes || '',
-              target: ex?.target || '',
-              equipment: ex?.equipment || '',
-              gifUrl: ex?.gifUrl || '',
-              imageUrl: ex?.imageUrl || '',
-              description: ex?.description || '',
-              isCustom: !!ex?.isCustom
-            }))
-          : []
-      }))
+      id: d?.id || `day_${i + 1}`,
+      title: d?.title || `Giorno ${String.fromCharCode(65 + i)}`,
+      exercises: Array.isArray(d?.exercises)
+        ? d.exercises.map((ex, j) => ({
+          id: ex?.id || `ex_${i}_${j}`,
+          exerciseId: ex?.exerciseId || null,
+          name: ex?.name || 'Esercizio',
+          sets: ex?.sets || '—',
+          reps: ex?.reps || '—',
+          weight: ex?.weight || '',
+          weightHistory: Array.isArray(ex?.weightHistory) ? ex.weightHistory : [],
+          rest: ex?.rest || '60"',
+          notes: ex?.notes || '',
+          target: ex?.target || '',
+          equipment: ex?.equipment || '',
+          gifUrl: ex?.gifUrl || '',
+          imageUrl: ex?.imageUrl || '',
+          description: ex?.description || '',
+          instructions: ex?.instructions || null,
+          isCustom: !!ex?.isCustom
+        }))
+        : []
+    }))
     : DEMO_WORKOUT.days;
 
   return {
@@ -246,6 +252,51 @@ export default function WorkoutViewPage() {
   const [expandedExerciseId, setExpandedExerciseId] = useState(null);
   const [completedExercises, setCompletedExercises] = useState({});
   const [copiedLink, setCopiedLink] = useState(false);
+  const [, setDbRefresh] = useState(0);
+
+  // Pre-caricamento in background del dataset esercizi per traduzioni dinamiche istantanee delle istruzioni
+  useEffect(() => {
+    fetchExercises()
+      .then(() => setDbRefresh((v) => v + 1))
+      .catch(() => {});
+  }, []);
+
+  // Modalità di visualizzazione: 'detailed' (estesa con parametri a vista) o 'compact' (elenco sintetico espandibile)
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('gymlink_view_mode') || 'detailed';
+  });
+
+  const handleToggleViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('gymlink_view_mode', mode);
+  };
+
+  // Modali Progressioni
+  const [progressModalEx, setProgressModalEx] = useState(null); // esercizio selezionato per modale grafico
+  const [isGlobalExportOpen, setIsGlobalExportOpen] = useState(false);
+  const [editingWeightExId, setEditingWeightExId] = useState(null);
+  const [editWeightVal, setEditWeightVal] = useState('');
+  const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
+
+  // Gestione aggiornamento peso cliente
+  const handleSaveEditedWeight = async (exerciseId) => {
+    if (!editWeightVal.trim() || !workout?.id) {
+      setEditingWeightExId(null);
+      return;
+    }
+    setIsUpdatingWeight(true);
+    try {
+      const res = await updateExerciseWeight(workout.id, exerciseId, editWeightVal.trim());
+      if (res.success && res.updatedWorkout) {
+        setWorkout(res.updatedWorkout);
+      }
+    } catch (err) {
+      console.error('Errore aggiornamento peso:', err);
+    } finally {
+      setIsUpdatingWeight(false);
+      setEditingWeightExId(null);
+    }
+  };
 
   // Stato apertura/chiusura testata protocollo (aperto al caricamento, auto-chiuso allo scroll e persistente)
   const [isHeaderOpen, setIsHeaderOpen] = useState(true);
@@ -282,6 +333,7 @@ export default function WorkoutViewPage() {
   const [timerSeconds, setTimerSeconds] = useState(null);
   const [timerActive, setTimerActive] = useState(false);
   const [timerInitial, setTimerInitial] = useState(90);
+  const [forceClientPreview, setForceClientPreview] = useState(false);
 
   // Rilevamento se l'utente è il PT che ha creato la scheda su questo dispositivo
   const isPtUser = useMemo(() => {
@@ -377,7 +429,9 @@ export default function WorkoutViewPage() {
   const handleShareWhatsApp = () => {
     const title = workout?.title || 'Scheda di Allenamento';
     const pt = workout?.ptName ? ` preparata da ${workout.ptName}` : '';
-    const text = encodeURIComponent(`Ecco la tua scheda di allenamento "${title}"${pt}:\n${window.location.href}`);
+    const text = encodeURIComponent(
+      `Ecco la tua scheda di allenamento "${title}"${pt}:\n${window.location.href}\n\n🔒 Nota: questo link è strettamente personale, conservalo e non condividerlo con altri per evitare modifiche ai tuoi dati di allenamento.`
+    );
     window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
   };
 
@@ -402,24 +456,60 @@ export default function WorkoutViewPage() {
 
   return (
     <div className="max-w-[1000px] mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
-      
+
+      {/* Banner se il PT ha attivato l'anteprima esatta del cliente */}
+      {isPtUser && forceClientPreview && (
+        <div className="rounded-xl border border-info/40 bg-info/10 p-2.5 sm:p-3 flex items-center justify-between gap-2 text-xs font-mono text-info gl-rise">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4 text-info shrink-0" />
+            <span>Anteprima <strong>Modalità Cliente</strong> attiva</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setForceClientPreview(false)}
+            className="gl-btn !h-7 !px-2.5 text-xs text-info hover:text-fg font-bold"
+          >
+            {t('btnExitClientPreview')}
+          </button>
+        </div>
+      )}
+
       {/* ---------- 1. BARRA DI CONTROLLO DEL PERSONAL TRAINER (VISIBILE SOLO AL PT) ---------- */}
-      {isPtUser ? (
+      {isPtUser && !forceClientPreview ? (
         <div className="rounded-xl border border-acc/40 bg-acc/10 p-3 sm:p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-[0_0_24px_-8px_var(--glow)] gl-rise">
           <div className="flex items-center gap-2.5 text-xs font-mono text-acc">
             <span className="w-2 h-2 rounded-full bg-acc animate-ping" />
             <span className="font-bold uppercase tracking-wider">
-              👤 Modalità PT Rilevata · Tu hai creato questa scheda
+              {t('ptDetectedBadge')}
             </span>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setForceClientPreview(true)}
+              className="gl-btn !h-8 !px-3 !text-xs !rounded-lg inline-flex items-center gap-1.5 text-fg hover:text-acc"
+              title="Visualizza la scheda esattamente come la vede il tuo atleta"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{t('btnToggleClientPreview')}</span>
+            </button>
+
             <Link
               to={`/edit/${workout.id}`}
               className="gl-btn-primary !h-8 !px-3.5 !text-xs !rounded-lg inline-flex items-center gap-1.5"
             >
               <FileEdit className="w-3.5 h-3.5" />
-              <span>✏️ Modifica Scheda</span>
+              <span>{t('btnEditWorkout')}</span>
+            </Link>
+
+            <Link
+              to={`/editor?templateId=${workout.id}`}
+              className="gl-btn !h-8 !px-3 !text-xs !rounded-lg inline-flex items-center gap-1.5 text-acc hover:!border-acc"
+              title="Usa questa scheda come base per un nuovo cliente"
+            >
+              <CopyPlus className="w-3.5 h-3.5" />
+              <span>{t('btnUseTemplate')}</span>
             </Link>
 
             <button
@@ -429,7 +519,7 @@ export default function WorkoutViewPage() {
               title="Copia link cliente da inviare su chat"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-acc" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Link Copiato!' : 'Copia Link'}</span>
+              <span>{copiedLink ? t('copiedSuccess') : t('actionCopy')}</span>
             </button>
 
             <button
@@ -444,27 +534,37 @@ export default function WorkoutViewPage() {
           </div>
         </div>
       ) : (
-        /* Badge di riservatezza per il cliente (Zero tasti di modifica) */
+        /* Badge di riservatezza per il cliente (con Link alla Guida Atleta e Stampa) */
         <div className="flex items-center justify-between gap-2 px-1 text-[11px] font-mono text-dim">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-acc" />
-            <span>Protocollo Privato Non Indicizzato · Sola Lettura</span>
+            <span>{t('privateBadge')}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="hover:text-fg inline-flex items-center gap-1"
-            title="Stampa o Salva PDF"
-          >
-            <Printer className="w-3 h-3" />
-            <span className="hidden sm:inline">Stampa / PDF</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/guida"
+              className="hover:text-acc inline-flex items-center gap-1 text-acc font-bold transition-colors"
+              title="Guida operativa all'uso della scheda per l'atleta"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-acc" />
+              <span>{t('clientGuideBtn')}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="hover:text-fg inline-flex items-center gap-1"
+              title="Stampa o Salva PDF"
+            >
+              <Printer className="w-3 h-3" />
+              <span className="hidden sm:inline">{t('btnPrintPdf')}</span>
+            </button>
+          </div>
         </div>
       )}
 
       {/* ---------- 2. SCHEDA INTESTAZIONE PROTOCOLLO (AUTO-COLLASSABILE ALLO SCROLL) ---------- */}
       <header className="gl-card gl-rise" style={{ '--d': '40ms' }}>
-        <div 
+        <div
           onClick={() => setIsHeaderOpen(!isHeaderOpen)}
           className="gl-card-head flex items-center justify-between gap-3 !pr-3 sm:!pr-4 cursor-pointer select-none transition-colors hover:bg-fg/[0.02]"
         >
@@ -477,7 +577,7 @@ export default function WorkoutViewPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="gl-tag !text-[9.5px] shrink-0 hidden sm:inline-flex">
-              {totalDays} {totalDays === 1 ? 'GIORNO' : 'GIORNI'}
+              {totalDays} {totalDays === 1 ? (lang === 'en' ? 'DAY' : lang === 'es' ? 'DÍA' : 'GIORNO') : (lang === 'en' ? 'DAYS' : lang === 'es' ? 'DÍAS' : 'GIORNI')}
             </span>
 
             {/* Pulsante Toggle con freccia per aprire/chiudere l'intestazione */}
@@ -492,7 +592,7 @@ export default function WorkoutViewPage() {
               aria-expanded={isHeaderOpen}
             >
               <span className="uppercase font-bold text-dim hover:text-fg">
-                {isHeaderOpen ? 'Comprimi' : 'Dettagli'}
+                {isHeaderOpen ? t('btnCollapse') : t('btnExpand')}
               </span>
               {isHeaderOpen ? (
                 <ChevronUp className="w-3.5 h-3.5 text-acc transition-transform duration-200" />
@@ -506,12 +606,12 @@ export default function WorkoutViewPage() {
         {/* Corpo Espanso: Dettagli PT, Atleta, Data, Note & Progresso */}
         {isHeaderOpen && (
           <div className="p-4 sm:p-5 space-y-4 gl-page-in border-t border-sline/50">
-            
+
             {/* Griglia Metadati: PT, Atleta, Data */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
               {workout.ptName && (
                 <div className="p-2.5 rounded-lg border border-sline bg-bg/50">
-                  <span className="block text-[10px] text-dim uppercase">Personal Trainer</span>
+                  <span className="block text-[10px] text-dim uppercase">{t('lblPt')}</span>
                   <span className="font-bold text-fg text-[13px] truncate block mt-0.5">
                     {workout.ptName}
                   </span>
@@ -520,7 +620,7 @@ export default function WorkoutViewPage() {
 
               {workout.clientName && (
                 <div className="p-2.5 rounded-lg border border-sline bg-bg/50">
-                  <span className="block text-[10px] text-dim uppercase">Atleta / Destinatario</span>
+                  <span className="block text-[10px] text-dim uppercase">{t('lblClient')}</span>
                   <span className="font-bold text-acc text-[13px] truncate block mt-0.5">
                     {workout.clientName}
                   </span>
@@ -529,7 +629,7 @@ export default function WorkoutViewPage() {
 
               {workout.date && (
                 <div className="p-2.5 rounded-lg border border-sline bg-bg/50 col-span-2 sm:col-span-1">
-                  <span className="block text-[10px] text-dim uppercase">Data Revisione</span>
+                  <span className="block text-[10px] text-dim uppercase">{t('lblRevisionDate')}</span>
                   <span className="text-dim text-[13px] block mt-0.5 font-mono">
                     {workout.date}
                   </span>
@@ -542,7 +642,7 @@ export default function WorkoutViewPage() {
               <div className="p-3.5 rounded-xl border border-line bg-bg2/70 text-xs space-y-1">
                 <div className="flex items-center gap-1.5 text-acc font-mono text-[11px] font-bold uppercase">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Indicazioni & Linee Guida Generali</span>
+                  <span>{t('lblGeneralNotes')}</span>
                 </div>
                 <p className="text-fg/90 leading-relaxed font-sans text-xs pt-0.5 whitespace-pre-line">
                   {workout.generalNotes}
@@ -550,15 +650,24 @@ export default function WorkoutViewPage() {
               </div>
             )}
 
-            {/* Barra di Progresso Seduta Attiva per il Cliente */}
-            <div className="pt-1 flex items-center justify-between gap-3 text-xs font-mono border-t border-sline/60">
+            {/* Barra di Progresso Seduta Attiva per il Cliente & Pulsante Storico Progressioni */}
+            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono border-t border-sline/60">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className={`w-4 h-4 ${progressPercent === 100 ? 'text-acc' : 'text-dim'}`} />
                 <span className="text-dim">
-                  Progresso seduta: <strong className="text-fg">{completedInDay}</strong> di <strong className="text-fg">{totalInDay}</strong> esercizi completati
+                  {t('lblSessionProgress')} <strong className="text-fg">{completedInDay}</strong> {t('lblOf')} <strong className="text-fg">{totalInDay}</strong> {t('lblExercisesCompleted')} ({progressPercent}%)
                 </span>
               </div>
-              <span className="font-bold text-acc">{progressPercent}%</span>
+
+              <button
+                type="button"
+                onClick={() => setIsGlobalExportOpen(true)}
+                className="gl-btn !h-8 !px-3 text-xs font-mono inline-flex items-center gap-1.5 text-acc hover:border-acc self-stretch sm:self-auto justify-center"
+                title="Visualizza e scarica lo storico progressioni di tutti gli esercizi"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                <span>{t('btnProgressionsAndExport')}</span>
+              </button>
             </div>
 
           </div>
@@ -580,16 +689,14 @@ export default function WorkoutViewPage() {
                   setActiveDayIndex(idx);
                   setExpandedExerciseId(null);
                 }}
-                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border font-mono text-xs sm:text-[13px] whitespace-nowrap transition-all flex items-center gap-2 ${
-                  isActive
+                className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl border font-mono text-xs sm:text-[13px] whitespace-nowrap transition-all flex items-center gap-2 ${isActive
                     ? 'border-acc bg-acc/15 text-acc font-bold shadow-[0_0_16px_-4px_var(--glow)]'
                     : 'border-sline bg-bg2/90 text-dim hover:text-fg hover:border-line2'
-                }`}
+                  }`}
               >
                 <span>{day.title || `Giorno ${String.fromCharCode(65 + idx)}`}</span>
-                <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                  isActive ? 'bg-acc text-ink' : 'bg-bg border border-sline text-dim'
-                }`}>
+                <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${isActive ? 'bg-acc text-ink' : 'bg-bg border border-sline text-dim'
+                  }`}>
                   {exCount}
                 </span>
               </button>
@@ -597,22 +704,53 @@ export default function WorkoutViewPage() {
           })}
         </div>
 
-        {/* Titolo Giorno Attivo */}
+        {/* Titolo Giorno Attivo & Selettore Visualizzazione Elenco/Dettagli */}
         <div className="flex items-center justify-between px-1">
           <h2 className="font-dot font-extrabold text-[16px] sm:text-[18px] text-fg tracking-wide uppercase">
             {currentDay?.title || `Giorno ${String.fromCharCode(65 + activeDayIndex)}`}
           </h2>
-          <span className="text-xs font-mono text-dim">
-            {exercisesList.length} esercizi programmati
-          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-xs font-mono text-dim mr-1">
+              {exercisesList.length} {t('navExercises').toLowerCase()}
+            </span>
+
+            {/* Toggle Tipo Visualizzazione: Elenco Compatto vs Dettagli Estesi */}
+            <div className="flex items-center p-0.5 rounded-lg border border-sline bg-bg2/90">
+              <button
+                type="button"
+                onClick={() => handleToggleViewMode('compact')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono transition-all ${viewMode === 'compact'
+                    ? 'bg-acc text-ink font-bold shadow-sm'
+                    : 'text-dim hover:text-fg'
+                  }`}
+                title="Visualizzazione compatta ad elenco (solo titoli e serie)"
+              >
+                <LayoutList className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">{t('viewModeList')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleViewMode('detailed')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-mono transition-all ${viewMode === 'detailed'
+                    ? 'bg-acc text-ink font-bold shadow-sm'
+                    : 'text-dim hover:text-fg'
+                  }`}
+                title="Visualizzazione dettagliata con parametri e carichi completi"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">{t('viewModeDetails')}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ---------- 4. LISTA ESERCIZI DELLA GIORNATA ---------- */}
-      <section className="space-y-3">
+      <section className="space-y-4 sm:space-y-5">
         {exercisesList.length === 0 ? (
           <div className="p-8 text-center border border-dashed border-sline rounded-xl bg-bg2/40 text-dim text-xs font-mono">
-            Nessun esercizio registrato per questa giornata.
+            {lang === 'en' ? 'No exercises registered for this day.' : lang === 'es' ? 'No hay ejercicios registrados para este día.' : 'Nessun esercizio registrato per questa giornata.'}
           </div>
         ) : (
           exercisesList.map((ex, idx) => {
@@ -621,165 +759,280 @@ export default function WorkoutViewPage() {
             const staticImg = ex.imageUrl || getExerciseImageUrl(ex.image);
             const gifUrl = ex.gifUrl || getExerciseMediaUrl(ex.gif_url);
 
+            // In modalità compatta (elenco), se non è esplicitamente espanso, mostriamo la riga sintetica
+            const isRowCompact = viewMode === 'compact' && !isExpanded;
+
             return (
               <article
                 key={ex.id || idx}
-                className={`gl-exercise-card rounded-xl overflow-hidden ${
-                  isCompleted 
-                    ? '!border-acc/30 bg-bg2/50 opacity-80' 
+                className={`gl-exercise-card rounded-2xl overflow-hidden transition-all ${isCompleted
+                    ? '!border-acc/30 bg-bg2/50 opacity-80'
                     : ''
-                }`}
+                  }`}
               >
                 {/* Header Esercizio: Spunta, Miniatura, Titolo e Toggle Dettagli */}
-                <div className="p-3 sm:p-4 flex items-center justify-between gap-3 bg-acc/[0.10] border-b border-line">
-                  
-                  {/* Spunta di completamento & # */}
-                  <div className="flex items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                <div
+                  onClick={() => {
+                    if (viewMode === 'compact') {
+                      setExpandedExerciseId(isExpanded ? null : ex.id);
+                    }
+                  }}
+                  className={`p-3 sm:p-4 flex items-center justify-between gap-3 bg-acc/[0.08] ${isRowCompact ? 'cursor-pointer hover:bg-acc/[0.12]' : 'border-b border-line'
+                    }`}
+                >
+
+                  {/* Spunta di completamento & # Badge Ingrandito */}
+                  <div className="flex items-center gap-3 sm:gap-3.5 flex-1 min-w-0">
                     <button
                       type="button"
-                      onClick={() => handleToggleCompleted(ex.id)}
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border grid place-items-center shrink-0 transition-colors ${
-                        isCompleted
-                          ? 'border-acc bg-acc text-ink shadow-[0_0_12px_-2px_var(--glow)]'
-                          : 'border-sline bg-bg2 hover:border-acc text-dim hover:text-acc'
-                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleCompleted(ex.id);
+                      }}
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl border grid place-items-center shrink-0 transition-all ${isCompleted
+                          ? 'border-acc bg-acc text-ink shadow-[0_0_14px_-2px_var(--glow)] font-black'
+                          : 'border-sline bg-bg2 hover:border-acc text-acc/90 hover:text-acc font-mono font-bold'
+                        }`}
                       title={isCompleted ? 'Segna come da fare' : 'Segna come completato'}
                     >
-                      {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : <span className="font-mono text-xs">#{idx + 1}</span>}
+                      {isCompleted ? (
+                        <Check className="w-5 h-5 stroke-[3]" />
+                      ) : (
+                        <span className="font-mono text-xs sm:text-[13px] font-extrabold tracking-tight">#{idx + 1}</span>
+                      )}
                     </button>
 
                     {/* Miniatura statica (JPG) */}
-                    <div 
-                      onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
-                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-0.5 flex items-center justify-center relative group"
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExerciseId(isExpanded ? null : ex.id);
+                      }}
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-0.5 flex items-center justify-center relative group shadow-sm"
                       title="Clicca per visualizzare animazione"
                     >
                       {staticImg ? (
                         <img
                           src={staticImg}
                           alt=""
-                          className="w-full h-full object-cover rounded"
+                          className="w-full h-full object-cover rounded-lg"
                           loading="lazy"
                           onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                       ) : (
-                        <Dumbbell className="w-4 h-4 text-dim opacity-50" />
+                        <Dumbbell className="w-5 h-5 text-dim opacity-50" />
                       )}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded">
-                        <Eye className="w-3.5 h-3.5 text-acc" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                        <Eye className="w-4 h-4 text-acc" />
                       </div>
                     </div>
 
-                    {/* Nome Esercizio e Tag */}
+                    {/* Nome Esercizio e Tag (Più grande, marcato ed evidente) */}
                     <div className="min-w-0 flex-1">
-                      <h3 className={`font-dot font-extrabold text-[14px] sm:text-[16px] leading-snug tracking-wide text-fg truncate ${
-                        isCompleted ? 'line-through text-dim' : ''
-                      }`}>
-                        {ex.name}
+                      <h3 className={`font-dot font-black text-[15px] sm:text-[18px] leading-snug tracking-wide text-fg truncate ${isCompleted ? 'line-through text-dim' : ''
+                        }`}>
+                        {getExerciseDisplayName(ex.name, lang)}
                       </h3>
-                      
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {ex.target && (
-                          <span className="text-[10px] font-mono text-acc/80 uppercase font-bold">
-                            {ex.target}
+                          <span className="text-[10.5px] sm:text-[11px] font-mono text-acc font-bold uppercase tracking-wider">
+                            {translateTarget(ex.target, lang)}
                           </span>
                         )}
                         {ex.equipment && (
-                          <span className="text-[10px] font-mono text-dim uppercase">
-                            · {ex.equipment}
+                          <span className="text-[10px] sm:text-[10.5px] font-mono text-dim uppercase">
+                            · {translateEquipment(ex.equipment, lang)}
                           </span>
                         )}
-                        {ex.isCustom && (
-                          <span className="gl-tag !text-[8px] !py-0.2 !px-1.5" style={{ '--fc': 'rgb(var(--c-info))' }}>
-                            CUSTOM
-                          </span>
+                        {isRowCompact && (
+                          <div className="ml-auto sm:ml-0 flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono text-[11px] font-bold text-fg bg-bg px-2 py-0.5 rounded border border-sline">
+                              {ex.sets || '—'} {t('lblSets').toLowerCase()} × {ex.reps || '—'}
+                            </span>
+                            {/* Timer Rapido Cliccabile anche in modalità compatta */}
+                            {ex.rest && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartRestTimer(ex.rest);
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-acc/40 bg-acc/10 text-acc hover:bg-acc hover:text-ink font-mono text-[11px] font-bold transition-all shadow-sm"
+                                title="Avvia subito timer recupero"
+                              >
+                                <Play className="w-2.5 h-2.5 fill-current" />
+                                <span>{ex.rest}</span>
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Pulsante Toggle GIF / Istruzioni */}
+                  {/* Pulsante Toggle GIF / Istruzioni / Espandi */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
-                      className={`gl-btn !h-8 !px-2.5 !text-xs font-mono gap-1 ${
-                        isExpanded ? '!border-acc !text-acc' : 'text-dim hover:text-fg'
-                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedExerciseId(isExpanded ? null : ex.id);
+                      }}
+                      className={`gl-btn !h-8 !px-2.5 !text-xs font-mono gap-1 rounded-lg ${isExpanded ? '!border-acc !text-acc' : 'text-dim hover:text-fg'
+                        }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{isExpanded ? 'Chiudi' : 'Animazione'}</span>
+                      <span className="hidden sm:inline">
+                        {isRowCompact ? t('viewModeDetails') : isExpanded ? t('btnClose') : (lang === 'en' ? 'Animation' : lang === 'es' ? 'Animación' : 'Animazione')}
+                      </span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
                   </div>
 
                 </div>
 
-                {/* Telemetria Parametri di Carico (FMDB Digital Grid) */}
-                <div className="p-3 sm:px-5 sm:py-3 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono text-xs border-b border-sline/40">
-                  
-                  {/* SERIE */}
-                  <div className="gl-param-card p-2.5">
-                    <span className="block text-[9.5px] text-dim uppercase tracking-wider">SERIE</span>
-                    <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
-                      {ex.sets || '—'}
-                    </span>
-                  </div>
+                {/* Se non è in modalità sintetica compatta, oppure se è espanso, mostra la griglia parametri completa con note */}
+                {(!isRowCompact || isExpanded) && (
+                  <>
+                    {/* Telemetria Parametri di Carico (FMDB Digital Grid) */}
+                    <div className="p-3 sm:px-5 sm:py-3.5 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono text-xs border-b border-sline/40">
 
-                  {/* REPS */}
-                  <div className="gl-param-card p-2.5">
-                    <span className="block text-[9.5px] text-dim uppercase tracking-wider">REPS</span>
-                    <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
-                      {ex.reps || '—'}
-                    </span>
-                  </div>
+                      {/* SERIE */}
+                      <div className="gl-param-card p-2.5 sm:p-3">
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblSets')}</span>
+                        <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
+                          {ex.sets || '—'}
+                        </span>
+                      </div>
 
-                  {/* CARICO / PESO */}
-                  <div className="gl-param-card p-2.5">
-                    <span className="block text-[9.5px] text-dim uppercase tracking-wider">CARICO</span>
-                    <span className="font-bold text-acc text-sm sm:text-base font-mono block mt-0.5">
-                      {ex.weight || 'A sensazione'}
-                    </span>
-                  </div>
+                      {/* REPS */}
+                      <div className="gl-param-card p-2.5 sm:p-3">
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblReps')}</span>
+                        <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
+                          {ex.reps || '—'}
+                        </span>
+                      </div>
 
-                  {/* RECUPERO (CON AVVIO TIMER A UN TOCCO) */}
-                  <div 
-                    onClick={() => ex.rest && handleStartRestTimer(ex.rest)}
-                    className="gl-param-card p-2.5 cursor-pointer group"
-                    title="Clicca per avviare il countdown di recupero"
-                  >
-                    <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider">
-                      <span>RECUPERO</span>
-                      <Play className="w-2.5 h-2.5 text-acc opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {/* CARICO / PESO (Modificabile dall'atleta o PT con storico progressivo) */}
+                      <div className="gl-param-card p-2.5 sm:p-3 relative group">
+                        <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
+                          <span>{t('lblWeight')}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setProgressModalEx(ex);
+                              }}
+                              className="text-acc hover:text-fg p-0.5 rounded hover:bg-acc/10"
+                              title="Visualizza grafico progressione e trendline"
+                            >
+                              <TrendingUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingWeightExId(ex.id);
+                                setEditWeightVal(ex.weight || '');
+                              }}
+                              className="text-dim hover:text-acc p-0.5 rounded hover:bg-bg"
+                              title="Modifica o aumenta il carico"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {editingWeightExId === ex.id ? (
+                          <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={editWeightVal}
+                              onChange={(e) => setEditWeightVal(e.target.value)}
+                              placeholder="es. 75 kg"
+                              className="gl-input !h-7 !px-2 font-mono text-xs !text-acc font-bold flex-1"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveEditedWeight(ex.id);
+                                if (e.key === 'Escape') setEditingWeightExId(null);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              disabled={isUpdatingWeight}
+                              onClick={() => handleSaveEditedWeight(ex.id)}
+                              className="gl-btn-primary !h-7 !px-2 text-xs font-mono"
+                            >
+                              {t('btnSave') || 'Salva'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingWeightExId(ex.id);
+                              setEditWeightVal(ex.weight || '');
+                            }}
+                            className="cursor-pointer flex items-center justify-between mt-0.5"
+                            title="Clicca per aggiornare il carico di oggi"
+                          >
+                            <span className="font-bold text-acc text-sm sm:text-base font-mono block">
+                              {ex.weight || (lang === 'en' ? 'By feel' : lang === 'es' ? 'Por sensaciones' : 'A sensazione')}
+                            </span>
+                            {Array.isArray(ex.weightHistory) && ex.weightHistory.length > 0 && (
+                              <span className="text-[10px] font-mono text-dim">
+                                📈 +{ex.weightHistory.length}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* RECUPERO (CON ICONCINA PLAY SEMPRE EVIDENTE E AVVIO A UN TOCCO) */}
+                      <div
+                        onClick={() => ex.rest && handleStartRestTimer(ex.rest)}
+                        className="gl-param-card p-2.5 sm:p-3 cursor-pointer group hover:border-acc transition-colors"
+                        title="Clicca per avviare il countdown di recupero"
+                      >
+                        <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
+                          <span>{t('lblRest')}</span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-acc/15 text-acc text-[9px] font-bold">
+                            <Play className="w-2.5 h-2.5 fill-current" />
+                            <span>{t('lblStartTimer')}</span>
+                          </span>
+                        </div>
+                        <span className="font-bold text-fg group-hover:text-acc text-sm sm:text-base font-mono block mt-0.5">
+                          {ex.rest || '60"'}
+                        </span>
+                      </div>
+
                     </div>
-                    <span className="font-bold text-fg group-hover:text-acc text-sm sm:text-base font-mono block mt-0.5">
-                      {ex.rest || '60"'}
-                    </span>
-                  </div>
 
-                </div>
-
-                {/* Note Specifiche del PT per l'Esercizio */}
-                {ex.notes && (
-                  <div className="px-3.5 py-2.5 bg-bg/40 text-xs font-sans border-b border-sline/30 flex items-start gap-2">
-                    <span className="font-mono text-[10px] font-bold text-acc uppercase shrink-0 mt-0.5">
-                      NOTE PT:
-                    </span>
-                    <p className="text-fg/90 leading-relaxed font-sans text-xs">
-                      {ex.notes}
-                    </p>
-                  </div>
+                    {/* Note Specifiche del PT per l'Esercizio */}
+                    {ex.notes && (
+                      <div className="px-3.5 py-2.5 bg-bg/40 text-xs font-sans border-b border-sline/30 flex items-start gap-2">
+                        <span className="font-mono text-[10px] font-bold text-acc uppercase shrink-0 mt-0.5">
+                          {t('lblNotesPt')}
+                        </span>
+                        <p className="text-fg/90 leading-relaxed font-sans text-xs">
+                          {ex.notes}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* Sezione Espansa: Dimostrazione Biomeccanica Animata (Lazy GIF) */}
+                {/* Sezione Espansa: Dimostrazione Biomeccanica Animata (Lazy GIF) & Istruzioni di Esecuzione */}
                 {isExpanded && (
-                  <div className="p-4 bg-bg/90 border-t border-sline/80 space-y-3 gl-page-in">
+                  <div className="p-4 bg-bg/95 border-t border-sline/80 space-y-3 gl-page-in">
                     <div className="flex flex-col md:flex-row items-center gap-4">
                       {gifUrl && (
                         <div className="w-44 h-44 sm:w-48 sm:h-48 rounded-xl border border-sline bg-bg2 overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-lg">
                           <img
                             src={gifUrl}
-                            alt={ex.name}
+                            alt={getExerciseDisplayName(ex.name, lang)}
                             className="w-full h-full object-contain rounded-lg"
                             loading="lazy"
                           />
@@ -788,14 +1041,14 @@ export default function WorkoutViewPage() {
 
                       <div className="flex-1 space-y-2 text-xs">
                         <span className="font-mono text-[10.5px] text-acc uppercase font-bold tracking-wider block">
-                          Istruzioni e Biomeccanica di Esecuzione
+                          {t('lblBiomechanics')}
                         </span>
                         <p className="text-fg/90 leading-relaxed font-sans text-xs">
-                          {ex.description || 'Esegui il movimento controllando la fase eccentrica e mantenendo costante la respirazione.'}
+                          {getExerciseDescription(ex, lang) || (lang === 'en' ? 'Perform the movement controlling the eccentric phase and breathing steadily.' : lang === 'es' ? 'Realiza el movimiento controlando la fase excéntrica y manteniendo una respiración constante.' : 'Esegui il movimento controllando la fase eccentrica e mantenendo costante la respirazione.')}
                         </p>
                         <div className="flex items-center gap-4 text-[11px] font-mono text-dim pt-2 border-t border-sline/50">
-                          <span>Target: <strong className="text-acc">{ex.target || 'Muscolo Primario'}</strong></span>
-                          <span>Attrezzatura: <strong className="text-info">{ex.equipment || 'Standard'}</strong></span>
+                          <span>Target: <strong className="text-acc">{translateTarget(ex.target, lang) || '—'}</strong></span>
+                          <span>{lang === 'en' ? 'Equipment' : lang === 'es' ? 'Equipamiento' : 'Attrezzatura'}: <strong className="text-info">{translateEquipment(ex.equipment, lang) || '—'}</strong></span>
                         </div>
                       </div>
                     </div>
@@ -845,7 +1098,7 @@ export default function WorkoutViewPage() {
 
       {/* ---------- 6. FLOATING REST TIMER (CRONOMETRO RECUPERO PALESTRA) ---------- */}
       {timerSeconds !== null && (
-        <aside 
+        <aside
           className="fixed bottom-4 right-4 z-40 bg-bg2/95 border border-acc/50 rounded-2xl p-3 shadow-2xl backdrop-blur-md flex items-center gap-3 font-mono text-xs gl-welup"
           aria-label="Cronometro di recupero"
         >
@@ -898,6 +1151,24 @@ export default function WorkoutViewPage() {
           </div>
         </aside>
       )}
+
+      {/* Modale Grafico Progressione Singolo Esercizio */}
+      {progressModalEx && (
+        <ExerciseProgressModal
+          isOpen={!!progressModalEx}
+          onClose={() => setProgressModalEx(null)}
+          exerciseName={getExerciseDisplayName(progressModalEx.name, lang)}
+          weightHistory={progressModalEx.weightHistory || []}
+          currentWeight={progressModalEx.weight}
+        />
+      )}
+
+      {/* Modale Panoramica Globale Progressioni & Download Dati */}
+      <GlobalProgressExportModal
+        isOpen={isGlobalExportOpen}
+        onClose={() => setIsGlobalExportOpen(false)}
+        workout={workout}
+      />
 
     </div>
   );

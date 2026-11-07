@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 /**
  * Guscio comune delle modali: sfondo sfocato con dissolvenza, pannello che sale (animazione FMDB "welup"),
@@ -21,12 +22,14 @@ export default function Modal({
   subtitle, 
   children, 
   footer, 
-  closeLabel = 'Close',
+  closeLabel,
   maxWidth = 'max-w-lg',
   customScroll = false,
   contentClassName = '',
   variant = 'center'
 }) {
+  const { t } = useLanguage();
+  const effectiveCloseLabel = closeLabel || t('btnClose') || 'Chiudi';
   const isAnchored = variant === 'anchored';
   const [navBottom, setNavBottom] = useState(60);
 
@@ -63,11 +66,11 @@ export default function Modal({
       type="button"
       onClick={onClose}
       className="gl-btn !h-8 !px-2.5 !rounded-lg shrink-0 inline-flex items-center gap-1.5 hover:!border-danger/60 hover:!text-danger"
-      aria-label={closeLabel}
-      title={closeLabel}
+      aria-label={effectiveCloseLabel}
+      title={effectiveCloseLabel}
     >
       <X className="w-4 h-4" strokeWidth={2.5} />
-      <span className="hidden sm:inline font-mono text-[11px] font-bold uppercase tracking-wider">{closeLabel}</span>
+      <span className="hidden sm:inline font-mono text-[11px] font-bold uppercase tracking-wider">{effectiveCloseLabel}</span>
     </button>
   );
 

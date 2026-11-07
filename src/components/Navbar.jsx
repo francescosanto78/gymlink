@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Dumbbell, BookOpen, Sun, Moon, ArrowLeft } from 'lucide-react';
+import { Dumbbell, BookOpen, Sun, Moon, ArrowLeft, Github } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 

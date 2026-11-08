@@ -8,7 +8,7 @@ const translations = {
     navStats: 'Statistiche',
     navHome: 'Home',
     navTutorial: 'Tutorial PT',
-    
+
     // Home Page
     heroBadge: 'SISTEMA GESTIONE SCHEDE • MODALITÀ GUEST',
     heroTitle: 'Programmazione Tecnica per Personal Trainer',
@@ -17,7 +17,7 @@ const translations = {
     btnCreateNew: 'Crea Nuova Scheda',
     btnCreateNewSub: 'Nuovo protocollo da zero',
     btnTutorial: 'Guida & Tutorial PT',
-    
+
     // Edit Existing
     btnToggleEdit: 'Modifica Scheda Esistente',
     editBoxTitle: 'Modifica Scheda Esistente',
@@ -25,7 +25,7 @@ const translations = {
     editInputPlaceholder: 'es. https://gymlink.app/w/xK9d2Lp1q0 oppure xK9d2Lp1q0',
     btnOpenWorkout: 'Carica Scheda',
     invalidIdError: 'ID scheda non valido o formato URL non corretto.',
-    
+
     // Recent Workouts Table
     recentWorkoutsTitle: 'Schede Recenti su questo Dispositivo',
     recentWorkoutsBadge: 'LOCAL STORAGE',
@@ -39,7 +39,7 @@ const translations = {
     actionOpen: 'Apri',
     actionCopy: 'Copia Link',
     copiedSuccess: 'Link copiato!',
-    
+
     // Footer
     createdBy: 'Creato da',
     authorName: 'Francesco Santo',
@@ -49,7 +49,7 @@ const translations = {
     datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
     legalDisclaimerLink: 'Note Legali & Disclaimer Medico',
     feedbackBtn: 'Feedback & Contatti',
-    
+
     // Feedback Modal
     feedbackModalTitle: 'Invia Feedback o Richiesta',
     feedbackModalSubtitle: 'Scrivi direttamente allo sviluppatore. Risponderemo via email appena possibile.',
@@ -65,7 +65,7 @@ const translations = {
     feedbackError: 'Si è verificato un errore durante l\'invio. Riprova più tardi.',
     feedbackNoKeyWarning: 'Attenzione: Chiave Web3Forms non ancora configurata nel file .env. La modale è pronta a ricevere le credenziali.',
     btnClose: 'Chiudi',
-    
+
     // Disclaimer Modal
     disclaimerModalTitle: 'Disclaimer Medico & Note Legali',
     disclaimerP1: 'GymLink è uno strumento tecnico e gestionale ideato per Personal Trainer e atleti per la consultazione e strutturazione di programmi di allenamento.',
@@ -80,7 +80,7 @@ const translations = {
     tutorialTitle: 'Come Usare GymLink al Meglio',
     tutorialSubtitle: 'Una guida tecnica, sintetica e per punti per creare, organizzare e condividere schede di allenamento professionali senza perdite di tempo.',
     tutorialStartNow: 'Inizia Ora a Creare la Scheda',
-    
+
     tutSec1Title: '1. Creazione Scheda & Organizzazione Split',
     tutSec1P1: 'Dati generali:',
     tutSec1P2: 'Inserisci Titolo, Nome PT, Nome Cliente e le Note Generali (riscaldamento, raccomandazioni o carichi di lavoro).',
@@ -106,12 +106,12 @@ const translations = {
     tutSec5P1: 'Generazione Link Unico crittografico (non indicizzato sui motori di ricerca).',
     tutSec5P2: 'Il cliente apre il link dallo smartphone in sola lettura senza scaricare app né registrarsi.',
     tutSec5P3: 'Condivisione WhatsApp immediata con messaggio precompilato pronto all\'invio.',
-    
+
     tutSec6Title: '6. Sovraccarico Progressivo, Grafici & Esportazione Dati',
     tutSec6P1: 'Progressione carichi monitorata:',
     tutSec6P2: 'I tuoi atleti possono aggiornare il carico sollevato direttamente dal proprio smartphone durante la sessione. Le variazioni nello stesso giorno vengono consolidate automaticamente.',
     tutSec6P3: 'Cliccando sull\'icona del grafico compare la linea di tendenza trimestrale con trendline lineare. Inoltre, il pulsante "Progressioni & Scarica Dati" permette di esportare l\'intero storico in formato CSV Excel o copiare il report per consultare un\'AI o pianificare il mesociclo successivo.',
-    
+
     // Restyling FMDB
     statDevice: 'schede su questo dispositivo',
     statLangs: 'lingue',
@@ -220,7 +220,7 @@ const translations = {
     navStats: 'Global Stats',
     navHome: 'Home',
     navTutorial: 'PT Guide',
-    
+
     // Home Page
     heroBadge: 'WORKOUT PROTOCOL SYSTEM • GUEST MODE',
     heroTitle: 'Technical Programming for Personal Trainers',
@@ -229,7 +229,7 @@ const translations = {
     btnCreateNew: 'Create New Routine',
     btnCreateNewSub: 'New protocol from scratch',
     btnTutorial: 'PT Guide & Tutorial',
-    
+
     // Edit Existing
     btnToggleEdit: 'Edit Existing Routine',
     editBoxTitle: 'Edit Existing Routine',
@@ -237,7 +237,7 @@ const translations = {
     editInputPlaceholder: 'e.g. https://gymlink.app/w/xK9d2Lp1q0 or xK9d2Lp1q0',
     btnOpenWorkout: 'Load Routine',
     invalidIdError: 'Invalid routine ID or link format.',
-    
+
     // Recent Workouts Table
     recentWorkoutsTitle: 'Recent Routines on this Device',
     recentWorkoutsBadge: 'LOCAL STORAGE',
@@ -251,7 +251,7 @@ const translations = {
     actionOpen: 'Open',
     actionCopy: 'Copy Link',
     copiedSuccess: 'Link copied!',
-    
+
     // Footer
     createdBy: 'Created by',
     authorName: 'Francesco Santo',
@@ -261,7 +261,7 @@ const translations = {
     datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
     legalDisclaimerLink: 'Legal & Medical Disclaimer',
     feedbackBtn: 'Feedback & Support',
-    
+
     // Feedback Modal
     feedbackModalTitle: 'Submit Feedback or Inquiries',
     feedbackModalSubtitle: 'Direct line to the developer. We will get back to you via email.',
@@ -277,7 +277,7 @@ const translations = {
     feedbackError: 'An error occurred while sending. Please try again later.',
     feedbackNoKeyWarning: 'Notice: Web3Forms access key not set in .env yet. The form is ready to use once configured.',
     btnClose: 'Close',
-    
+
     // Disclaimer Modal
     disclaimerModalTitle: 'Medical & Legal Disclaimer',
     disclaimerP1: 'GymLink is a technical tool designed for fitness professionals and athletes to organize and inspect workout protocols.',
@@ -292,7 +292,7 @@ const translations = {
     tutorialTitle: 'How to Get the Most Out of GymLink',
     tutorialSubtitle: 'A concise, step-by-step technical manual for trainers to build, manage and deliver high-standard workout protocols.',
     tutorialStartNow: 'Start Building a Routine Now',
-    
+
     tutSec1Title: '1. Routine Creation & Split Organization',
     tutSec1P1: 'General metadata:',
     tutSec1P2: 'Fill in Routine Title, Trainer Name, Client Name, and general instructions (warm-up, hydration, progressive overload notes).',
@@ -318,12 +318,12 @@ const translations = {
     tutSec5P1: 'Cryptographic unique URL generated on save (no-index, non-crawlable).',
     tutSec5P2: 'Clients open the link directly on mobile browsers with zero sign-ups or app downloads.',
     tutSec5P3: 'Instant WhatsApp sharing with pre-formatted direct message.',
-    
+
     tutSec6Title: '6. Progressive Overload, Charts & Data Export',
     tutSec6P1: 'Monitored weight progression:',
     tutSec6P2: 'Athletes can log updated weights straight from their phones during sessions. Multiple same-day edits automatically consolidate to the latest load.',
     tutSec6P3: 'Tapping the chart icon displays a 3-month window with an automated regression trendline. The "Progressions & Export Data" module allows full CSV export for spreadsheets or preformatted prompts for AI and periodization planning.',
-    
+
     // FMDB restyling
     statDevice: 'routines on this device',
     statLangs: 'languages',
@@ -432,7 +432,7 @@ const translations = {
     navStats: 'Estadísticas',
     navHome: 'Inicio',
     navTutorial: 'Guía PT',
-    
+
     // Home Page
     heroBadge: 'SISTEMA DE RUTINAS • MODO INVITADO',
     heroTitle: 'Programación Técnica para Entrenadores',
@@ -441,7 +441,7 @@ const translations = {
     btnCreateNew: 'Crear Nueva Rutina',
     btnCreateNewSub: 'Nuevo protocolo desde cero',
     btnTutorial: 'Guía y Tutorial PT',
-    
+
     // Edit Existing
     btnToggleEdit: 'Modificar Rutina Existente',
     editBoxTitle: 'Modificar Rutina Existente',
@@ -449,7 +449,7 @@ const translations = {
     editInputPlaceholder: 'ej. https://gymlink.app/w/xK9d2Lp1q0 o xK9d2Lp1q0',
     btnOpenWorkout: 'Cargar Rutina',
     invalidIdError: 'ID o formato de enlace no válido.',
-    
+
     // Recent Workouts Table
     recentWorkoutsTitle: 'Rutinas Recientes en este Dispositivo',
     recentWorkoutsBadge: 'ALMACENAMIENTO LOCAL',
@@ -463,7 +463,7 @@ const translations = {
     actionOpen: 'Abrir',
     actionCopy: 'Copiar Enlace',
     copiedSuccess: '¡Enlace copiado!',
-    
+
     // Footer
     createdBy: 'Creado por',
     authorName: 'Francesco Santo',
@@ -473,7 +473,7 @@ const translations = {
     datasetRepoNote: 'hasaneyldrm/exercises-dataset (MIT)',
     legalDisclaimerLink: 'Aviso Legal y Médico',
     feedbackBtn: 'Comentarios y Contacto',
-    
+
     // Feedback Modal
     feedbackModalTitle: 'Enviar Comentarios o Consultas',
     feedbackModalSubtitle: 'Contacto directo con el desarrollador. Responderemos a tu correo lo antes posible.',
@@ -489,7 +489,7 @@ const translations = {
     feedbackError: 'Ocurrió un error al enviar. Por favor intenta más tarde.',
     feedbackNoKeyWarning: 'Aviso: Clave Web3Forms aún no configurada en el archivo .env.',
     btnClose: 'Cerrar',
-    
+
     // Disclaimer Modal
     disclaimerModalTitle: 'Descargo de Responsabilidad Médica y Legal',
     disclaimerP1: 'GymLink es una herramienta técnica desarrollada para que entrenadores personales y atletas estructuren y consulten programas de entrenamiento.',
@@ -504,7 +504,7 @@ const translations = {
     tutorialTitle: 'Cómo Aprovechar GymLink al Máximo',
     tutorialSubtitle: 'Una guía técnica y sintetizada paso a paso para entrenadores que buscan estructurar y compartir programas de entrenamiento profesionales.',
     tutorialStartNow: 'Empezar a Crear la Rutina',
-    
+
     tutSec1Title: '1. Creación de Rutinas y División de Días',
     tutSec1P1: 'Datos del protocolo:',
     tutSec1P2: 'Completa Título, Nombre del Entrenador, Nombre del Cliente y las Notas Generales (calentamiento, observaciones y pautas de carga).',
@@ -530,12 +530,12 @@ const translations = {
     tutSec5P1: 'Enlace criptográfico único generado al guardar (no indexado en motores de búsqueda).',
     tutSec5P2: 'El cliente abre el enlace en su smartphone en modo solo lectura, sin registros ni apps.',
     tutSec5P3: 'Envío instantáneo por WhatsApp con mensaje preformateado listo para enviar.',
-    
+
     tutSec6Title: '6. Sobrecarga Progresiva, Gráficos y Exportación de Datos',
     tutSec6P1: 'Progresión de cargas supervisada:',
     tutSec6P2: 'Tus atletas pueden actualizar el peso levantado directamente desde su móvil durante el entrenamiento. Los cambios en el mismo día se consolidan automáticamente.',
     tutSec6P3: 'Al hacer clic en el gráfico se muestra una ventana trimestral con línea de tendencia. Además, el módulo "Progresiones & Descargar Datos" permite exportar todo el histórico a CSV Excel o copiar tablas para IA y nuevos mesociclos.',
-    
+
     // Rediseño FMDB
     statDevice: 'rutinas en este dispositivo',
     statLangs: 'idiomas',

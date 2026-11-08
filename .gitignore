@@ -27,6 +27,9 @@ dist-ssr
 .env
 !.env.example
 
-# File privati personali
+# File privati personali e documentazione interna
 leggimi.txt
+DOCUMENTAZIONE_TECNICA.md
+ROADMAP.md
+specifiche_di_progetto_gymlink_e_guida_setup.md
 

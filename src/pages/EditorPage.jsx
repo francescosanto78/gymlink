@@ -10,7 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import Modal from '../components/Modal';
 import ExerciseSearchModal from '../components/ExerciseSearchModal';
 import { saveWorkout, getWorkoutById } from '../services/workoutService';
-import { translateTarget, translateEquipment, getExerciseDisplayName } from '../services/exerciseService';
+import { translateTarget, translateEquipment, getExerciseDisplayName, getExerciseDescription } from '../services/exerciseService';
 
 const DRAFT_KEY = 'gymlink_draft';
 const RECENT_KEY = 'gymlink_recent_workouts';

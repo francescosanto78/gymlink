@@ -81,24 +81,36 @@ export default function EditorPage() {
       }
     }
 
-    // Altrimenti tenta il ripristino della bozza
+    // 3. Altrimenti (Crea Nuova Scheda da Zero):
+    // Deve partire sempre da zero! Non ripristinare vecchie schede o bozze precedenti.
+    let defaultPtName = '';
     try {
-      const draft = localStorage.getItem(DRAFT_KEY);
-      if (draft && !editId && !templateId) {
-        return JSON.parse(draft);
+      const stored = localStorage.getItem(RECENT_KEY);
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list) && list.length > 0 && list[0]?.ptName) {
+          defaultPtName = list[0].ptName;
+        }
       }
     } catch (e) {
-      console.warn(e);
+      // ignore
     }
 
-    // Default template iniziale (nanoid pulito di 10 caratteri)
+    // Rimuove qualsiasi residuo di bozza precedente
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (e) {
+      // ignore
+    }
+
+    // Default template iniziale pulito da zero
     return {
-      id: editId || nanoid(10),
-      title: 'Protocollo Ipertrofia - Mesociclo 1',
-      ptName: '',
+      id: nanoid(10),
+      title: 'Nuovo Protocollo',
+      ptName: defaultPtName,
       clientName: '',
       date: getTodayString(),
-      generalNotes: '3 sedute settimanali. Eseguire sempre 10 min di riscaldamento articolare prima di iniziare.',
+      generalNotes: '',
       days: [createEmptyDay(1)]
     };
   });

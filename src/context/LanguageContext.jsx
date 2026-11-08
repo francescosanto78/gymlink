@@ -206,7 +206,12 @@ const translations = {
     tooltipViewAnim: 'Clicca per visualizzare animazione',
     tooltipViewTrend: 'Visualizza grafico progressione e trendline',
     tooltipEditWeight: 'Modifica o aumenta il carico',
-    tooltipStartRest: 'Avvia subito timer recupero'
+    tooltipStartRest: 'Avvia subito timer recupero',
+    firstVisitTitle: 'Benvenuto su GymLink',
+    firstVisitSubtitle: 'Primo accesso da questo dispositivo',
+    firstVisitPrompt: 'Se stai usando l\'app per la prima volta leggi il tutorial, bastano 2 minuti.',
+    firstVisitReadTutorial: 'Leggi il Tutorial (2 min)',
+    firstVisitDismiss: 'Inizia Subito'
   },
   en: {
     // Navbar
@@ -413,7 +418,12 @@ const translations = {
     tooltipViewAnim: 'Click to view animation',
     tooltipViewTrend: 'View progression chart and trendline',
     tooltipEditWeight: 'Edit or increase load',
-    tooltipStartRest: 'Start rest timer now'
+    tooltipStartRest: 'Start rest timer now',
+    firstVisitTitle: 'Welcome to GymLink',
+    firstVisitSubtitle: 'First time on this device',
+    firstVisitPrompt: 'If you are using the app for the first time, read the tutorial, it only takes 2 minutes.',
+    firstVisitReadTutorial: 'Read Tutorial (2 min)',
+    firstVisitDismiss: 'Start Now'
   },
   es: {
     // Navbar
@@ -620,7 +630,12 @@ const translations = {
     tooltipViewAnim: 'Haz clic para ver animación',
     tooltipViewTrend: 'Ver gráfico de progresión y tendencia',
     tooltipEditWeight: 'Modificar o aumentar carga',
-    tooltipStartRest: 'Iniciar temporizador de descanso'
+    tooltipStartRest: 'Iniciar temporizador de descanso',
+    firstVisitTitle: '¡Bienvenido a GymLink!',
+    firstVisitSubtitle: 'Primer acceso desde este dispositivo',
+    firstVisitPrompt: 'Si estás usando la aplicación por primera vez, lee el tutorial, solo toma 2 minutos.',
+    firstVisitReadTutorial: 'Leer el Tutorial (2 min)',
+    firstVisitDismiss: 'Empezar Ahora'
   }
 };
 

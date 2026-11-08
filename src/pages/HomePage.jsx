@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, Search, FileEdit, Clock, Copy, Check, Dumbbell, Info, X, BookOpen, ExternalLink, Eye, CopyPlus } from 'lucide-react';
+import { Plus, Search, FileEdit, Clock, Copy, Check, Dumbbell, Info, X, BookOpen, ExternalLink, Eye, CopyPlus, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import Modal from '../components/Modal';
 
 export default function HomePage() {
   const { t, lang } = useLanguage();
@@ -11,6 +12,7 @@ export default function HomePage() {
   const [recentWorkouts, setRecentWorkouts] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [showFirstVisitModal, setShowFirstVisitModal] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const editInputRef = useRef(null);
@@ -22,17 +24,43 @@ export default function HomePage() {
   const introText = t('heroDesc');
   const countText = `${recentWorkouts.length} ${t('statDevice')}`;
 
-  // Load cached workouts from localStorage
+  // Load cached workouts from localStorage & verifica se è la prima volta che l'utente usa l'app
   useEffect(() => {
     try {
       const stored = localStorage.getItem('gymlink_recent_workouts');
+      const dismissed = localStorage.getItem('gymlink_tutorial_prompt_dismissed');
       if (stored) {
-        setRecentWorkouts(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRecentWorkouts(parsed);
+          return;
+        }
+      }
+      // Se non ci sono schede memorizzate su questo dispositivo e il popup non è stato ancora chiuso
+      if (!dismissed) {
+        const timer = setTimeout(() => {
+          setShowFirstVisitModal(true);
+        }, 500);
+        return () => clearTimeout(timer);
       }
     } catch (e) {
       console.warn('Unable to load cached workouts', e);
     }
   }, []);
+
+  const handleDismissFirstVisit = () => {
+    setShowFirstVisitModal(false);
+    try {
+      localStorage.setItem('gymlink_tutorial_prompt_dismissed', 'true');
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleOpenTutorialFromFirstVisit = () => {
+    handleDismissFirstVisit();
+    navigate('/tutorial');
+  };
 
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
@@ -454,6 +482,48 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ---------- POPUP PRIMO ACCESSO: INVITO AL TUTORIAL ---------- */}
+      <Modal
+        isOpen={showFirstVisitModal}
+        onClose={handleDismissFirstVisit}
+        variant="center"
+        maxWidth="max-w-md"
+        title={t('firstVisitTitle')}
+        subtitle={t('firstVisitSubtitle')}
+        icon={<BookOpen className="w-5 h-5" />}
+      >
+        <div className="space-y-4 pt-1">
+          <div className="p-4 rounded-xl border border-line bg-bg2/90 space-y-2">
+            <div className="flex items-center gap-2 text-acc font-mono text-xs font-bold uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-acc animate-ping" />
+              <span>{lang === 'en' ? 'Starter Tip' : lang === 'es' ? 'Consejo de Inicio' : 'Consiglio per iniziare'}</span>
+            </div>
+            <p className="text-fg text-sm sm:text-[15px] font-sans leading-relaxed">
+              {t('firstVisitPrompt')}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={handleOpenTutorialFromFirstVisit}
+              className="gl-btn-primary w-full sm:flex-1 justify-center !h-10 text-xs font-mono font-bold inline-flex items-center gap-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>{t('firstVisitReadTutorial')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDismissFirstVisit}
+              className="gl-btn w-full sm:flex-1 justify-center !h-10 text-xs font-mono inline-flex items-center gap-1.5 text-dim hover:text-fg"
+            >
+              <span>{t('firstVisitDismiss')}</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
 
     </div>
   );

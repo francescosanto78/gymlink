@@ -17,6 +17,8 @@ export default function ExerciseProgressModal({
   const { t, lang } = useLanguage();
   // Offset trimestrale (0 = trimestre corrente/più recente, 1 = trimestre precedente, ecc.)
   const [quarterOffset, setQuarterOffset] = useState(0);
+  // Selettore serie per esercizi piramidali / divisi ('max' o indice 0..4)
+  const [selectedSeries, setSelectedSeries] = useState('max');
 
   // Normalizza e ordina i punti storici nel tempo
   const sortedPoints = useMemo(() => {
@@ -27,6 +29,19 @@ export default function ExerciseProgressModal({
       .filter((p) => p && p.date)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [weightHistory]);
+
+  // Rileva quali slot serie (S1..S5) hanno dati multipli nello storico
+  const availableSeriesIndices = useMemo(() => {
+    const active = new Set();
+    sortedPoints.forEach((p) => {
+      if (Array.isArray(p.setWeightsNum)) {
+        p.setWeightsNum.forEach((n, idx) => {
+          if (typeof n === 'number' && !isNaN(n)) active.add(idx);
+        });
+      }
+    });
+    return Array.from(active).sort((a, b) => a - b);
+  }, [sortedPoints]);
 
   // Seleziona la finestra di 3 mesi in base a quarterOffset
   const { windowPoints, windowLabel, canGoPrev, canGoNext } = useMemo(() => {
@@ -55,11 +70,30 @@ export default function ExerciseProgressModal({
     const canGoNext = quarterOffset > 0;
 
     return { windowPoints: pts, windowLabel, canGoPrev, canGoNext };
-  }, [sortedPoints, quarterOffset]);
+  }, [sortedPoints, quarterOffset, lang]);
 
   // Calcolo dati geometrici SVG per grafico e trendline lineare
   const chartData = useMemo(() => {
-    const validNumeric = windowPoints.filter((p) => typeof p.weight === 'number' && !isNaN(p.weight));
+    const getPointWeight = (p) => {
+      if (selectedSeries === 'max') {
+        if (Array.isArray(p.setWeightsNum)) {
+          const nums = p.setWeightsNum.filter((n) => typeof n === 'number' && !isNaN(n));
+          if (nums.length > 0) return Math.max(...nums);
+        }
+        return typeof p.weight === 'number' && !isNaN(p.weight) ? p.weight : null;
+      }
+      if (Array.isArray(p.setWeightsNum) && typeof p.setWeightsNum[selectedSeries] === 'number' && !isNaN(p.setWeightsNum[selectedSeries])) {
+        return p.setWeightsNum[selectedSeries];
+      }
+      if (selectedSeries === 0 && typeof p.weight === 'number' && !isNaN(p.weight)) {
+        return p.weight;
+      }
+      return null;
+    };
+
+    const validNumeric = windowPoints
+      .map((p) => ({ ...p, weight: getPointWeight(p) }))
+      .filter((p) => typeof p.weight === 'number' && !isNaN(p.weight));
     if (validNumeric.length === 0) return null;
 
     const weights = validNumeric.map((p) => p.weight);
@@ -120,7 +154,7 @@ export default function ExerciseProgressModal({
       svgWidth,
       svgHeight
     };
-  }, [windowPoints]);
+  }, [windowPoints, selectedSeries]);
 
   return (
     <Modal
@@ -153,6 +187,37 @@ export default function ExerciseProgressModal({
           </div>
         ) : (
           <>
+            {/* Selettore Serie (visibile se l'esercizio ha più serie tracciate) */}
+            {availableSeriesIndices.length > 1 && (
+              <div className="flex items-center gap-1.5 flex-wrap font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSeries('max')}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                    selectedSeries === 'max'
+                      ? 'border-acc bg-acc text-ink'
+                      : 'border-sline bg-bg2 text-dim hover:text-fg'
+                  }`}
+                >
+                  {t('chartFilterMax')}
+                </button>
+                {availableSeriesIndices.map((sIdx) => (
+                  <button
+                    key={sIdx}
+                    type="button"
+                    onClick={() => setSelectedSeries(sIdx)}
+                    className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                      selectedSeries === sIdx
+                        ? 'border-acc bg-acc text-ink'
+                        : 'border-sline bg-bg2 text-dim hover:text-fg'
+                    }`}
+                  >
+                    S{sIdx + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Selettore Trimestre con frecce in basso */}
             <div className="flex items-center justify-between p-2.5 rounded-xl border border-sline bg-bg2 text-xs font-mono">
               <span className="text-dim uppercase text-[10px] tracking-wider">{t('timeWindowLabel')}</span>

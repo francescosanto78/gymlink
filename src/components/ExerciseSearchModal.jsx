@@ -325,73 +325,75 @@ export default function ExerciseSearchModal({ isOpen, onClose, onSelectExercise 
                     key={ex.id}
                     className="rounded-xl border border-sline bg-bg2/90 hover:border-acc/50 transition-all overflow-hidden"
                   >
-                    <div className="p-2 sm:p-3 flex items-center justify-between gap-2.5 sm:gap-3">
+                    <div className="p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
 
-                      {/* 1. Miniatura Statica Leggera (Dimensione raddoppiata per massima leggibilità) */}
-                      <div
-                        onClick={() => setPreviewExercise(isPreviewing ? null : ex)}
-                        className="w-20 h-20 sm:w-24 sm:h-24 min-w-[80px] sm:min-w-[96px] max-w-[80px] sm:max-w-[96px] min-h-[80px] sm:min-h-[96px] max-h-[80px] sm:max-h-[96px] rounded-xl border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-1 flex items-center justify-center relative group shadow-sm"
-                        title="Clicca per ingrandire animazione"
-                      >
-                        {staticImgUrl ? (
-                          <img
-                            src={staticImgUrl}
-                            alt={ex.name}
-                            className="w-full h-full object-contain rounded-lg"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Dumbbell className="w-6 h-6 text-dim opacity-40" />
-                        )}
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
-                          <Eye className="w-5 h-5 text-acc" />
+                      <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 flex-1 min-w-0">
+                        {/* 1. Miniatura Statica Leggera */}
+                        <div
+                          onClick={() => setPreviewExercise(isPreviewing ? null : ex)}
+                          className="w-16 h-16 sm:w-24 sm:h-24 min-w-[64px] sm:min-w-[96px] rounded-xl border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc transition-colors p-1 flex items-center justify-center relative group shadow-sm"
+                          title="Clicca per ingrandire animazione"
+                        >
+                          {staticImgUrl ? (
+                            <img
+                              src={staticImgUrl}
+                              alt={ex.name}
+                              className="w-full h-full object-contain rounded-lg"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Dumbbell className="w-6 h-6 text-dim opacity-40" />
+                          )}
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                            <Eye className="w-5 h-5 text-acc" />
+                          </div>
+                        </div>
+
+                        {/* 2. Dettagli Esercizio (nome completo multi-riga su mobile, nessun taglio) */}
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1">
+                            <span className="font-mono text-[13px] sm:text-sm font-bold text-fg capitalize leading-snug break-words block">
+                              {getExerciseDisplayName(ex.name, modalLang)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {targetName && (
+                              <span className="gl-tag !text-[8px] sm:!text-[8.5px] !py-0.2 !px-1.5" style={{ '--fc': 'rgb(var(--c-acc))' }}>
+                                {targetName}
+                              </span>
+                            )}
+                            {equipName && (
+                              <span className="gl-tag !text-[8px] sm:!text-[8.5px] !py-0.2 !px-1.5" style={{ '--fc': 'rgb(var(--c-info))' }}>
+                                {equipName}
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="hidden sm:block text-[11px] text-dim line-clamp-1 mt-0.5">
+                            {getExerciseDescription(ex, modalLang)}
+                          </p>
                         </div>
                       </div>
 
-                      {/* 2. Dettagli Esercizio */}
-                      <div className="min-w-0 flex-1 pr-1">
-                        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                          <span className="font-mono text-xs sm:text-sm font-bold text-fg capitalize truncate block max-w-full">
-                            {getExerciseDisplayName(ex.name, modalLang)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {targetName && (
-                            <span className="gl-tag !text-[8px] sm:!text-[8.5px] !py-0.2 !px-1.5" style={{ '--fc': 'rgb(var(--c-acc))' }}>
-                              {targetName}
-                            </span>
-                          )}
-                          {equipName && (
-                            <span className="gl-tag !text-[8px] sm:!text-[8.5px] !py-0.2 !px-1.5" style={{ '--fc': 'rgb(var(--c-info))' }}>
-                              {equipName}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="hidden sm:block text-[11px] text-dim line-clamp-1 mt-0.5">
-                          {getExerciseDescription(ex, modalLang)}
-                        </p>
-                      </div>
-
-                      {/* 3. Azioni Rapide */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      {/* 3. Azioni Rapide (riga dedicata su mobile per lasciare spazio pieno al titolo) */}
+                      <div className="flex items-center justify-end gap-1.5 shrink-0 pt-1.5 sm:pt-0 border-t border-sline/40 sm:border-t-0">
                         {gifUrl && (
                           <button
                             type="button"
                             onClick={() => setPreviewExercise(isPreviewing ? null : ex)}
-                            className={`gl-btn !h-7 sm:!h-8 !px-2 !text-[11px] !font-mono gap-1 ${isPreviewing ? '!border-acc !text-acc' : 'text-dim hover:text-fg'
+                            className={`gl-btn !h-7 sm:!h-8 !px-2.5 !text-[11px] !font-mono gap-1 ${isPreviewing ? '!border-acc !text-acc' : 'text-dim hover:text-fg'
                               }`}
                             title="Anteprima GIF"
                           >
                             <Eye className="w-3 h-3" />
-                            <span className="hidden sm:inline">GIF</span>
+                            <span>GIF</span>
                           </button>
                         )}
 
                         <button
                           type="button"
                           onClick={() => handleSelect(ex)}
-                          className="gl-btn-primary !h-7 sm:!h-8 !px-2.5 sm:!px-3.5 !text-[11px] sm:!text-xs font-mono gap-1"
+                          className="gl-btn-primary !h-7 sm:!h-8 !px-3 sm:!px-3.5 !text-[11px] sm:!text-xs font-mono gap-1"
                         >
                           <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                           <span>Aggiungi</span>

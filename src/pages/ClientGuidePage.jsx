@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   CheckCircle2, Eye, Timer, CalendarDays, ChevronDown, StickyNote,
-  TrendingUp, LayoutList, Download, ShieldCheck, Scale, ArrowLeft
+  TrendingUp, LayoutList, Download, ShieldCheck, Scale, ArrowLeft, Play, Layers
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -12,14 +12,16 @@ const CONTENT = {
     intro: 'Tutte le indicazioni per seguire al meglio il tuo allenamento, registrare i carichi e monitorare i progressi direttamente dallo smartphone.',
     steps: [
       { icon: CalendarDays, t: 'Scegli la giornata', d: 'In alto trovi i tab (Giorno A, B, C…). Tocca quello di oggi, oppure usa i pulsanti "Giorno Prec./Succ." in fondo alla pagina.' },
+      { icon: Play, t: 'Allenamento Guidato step-by-step', d: 'Tocca "▶ Allenamento Guidato" e scegli la giornata: segui un esercizio alla volta con barra di avanzamento sulle singole serie, timer zoomato (con Pausa, Salta recupero e Modifica peso) e frasi motivazionali. Se il telefono va in standby o si blocca, alla riapertura ti chiede automaticamente di riprendere da dove avevi lasciato.' },
       { icon: LayoutList, t: 'Vista Elenco o Dettagli', d: 'Puoi alternare tra la vista compatta ad "Elenco" (ideale se conosci già la scheda, per leggere al volo serie/reps e avviare il recupero) e la vista "Dettagli" con parametri completi.' },
-      { icon: TrendingUp, t: 'Aggiorna i tuoi carichi (Peso)', d: 'Quando aumenti il carico su un esercizio, tocca il riquadro "Carico" per inserire il nuovo peso. Se modifichi il peso più volte nella stessa giornata, il sistema conserva automaticamente l\'ultimo valore.' },
-      { icon: Scale, t: 'Grafico di progressione & Trendline', d: 'Tocca l\'icona del grafico accanto al carico per vedere l\'andamento dei tuoi pesi negli ultimi 3 mesi (~12 settimane), con la linea di tendenza e le frecce per consultare i trimestri passati.' },
+      { icon: Layers, t: 'Serie differenziate (Piramidali)', d: 'Se il tuo PT ha impostato serie con carichi o ripetizioni differenti (es. piramidali), in modalità Dettagli vedrai una riga dedicata per ogni serie (S1..S5) con il proprio peso modificabile e timer singolo.' },
+      { icon: TrendingUp, t: 'Aggiorna i tuoi carichi (Peso)', d: 'Quando aumenti il carico su un esercizio o su una singola serie, tocca il peso per aggiornarlo. Se modifichi il carico più volte nella stessa giornata, il sistema conserva automaticamente l\'ultimo valore finale.' },
+      { icon: Scale, t: 'Grafico di progressione & Trendline', d: 'Tocca l\'icona del grafico accanto al carico per vedere l\'andamento dei tuoi pesi negli ultimi 3 mesi (~12 settimane), con la linea di tendenza, il filtro per singola serie nei piramidali e le frecce trimestrali.' },
       { icon: Timer, t: 'Timer di recupero con 1 tocco', d: 'Tocca il riquadro "Recupero" o l\'icona del play per avviare il countdown tra una serie e l\'altra. Funziona sia nella vista estesa che nella vista compatta.' },
       { icon: Eye, t: 'Animazioni biomeccaniche & Istruzioni', d: 'Tocca l\'immagine dell\'esercizio o "Animazione" per vedere la GIF del movimento e leggere le indicazioni biomeccaniche.' },
       { icon: StickyNote, t: 'Note tecniche del PT', d: 'Sotto ogni esercizio trovi le indicazioni speciali del tuo trainer: tempi di esecuzione, ripetizioni in riserva (RIR), impostazione scapolare o sensazioni.' },
-      { icon: CheckCircle2, t: 'Segna gli esercizi completati', d: 'Tocca il badge numerico a sinistra di ogni esercizio per spuntarlo man mano che completi le serie. La barra in alto calcola la percentuale di completamento della seduta.' },
-      { icon: Download, t: 'Progressioni globali & Scarica dati', d: 'In cima alla scheda trovi il pulsante "📊 Progressioni & Scarica Dati" per visualizzare tutte le variazioni di peso e scaricare un file Excel CSV oppure copiare il report per il tuo PT o per un\'AI.' },
+      { icon: CheckCircle2, t: 'Smarca singole serie ed esercizi', d: 'Anche fuori dall\'Allenamento Guidato puoi spuntare manualmente ogni singola serie (i bottoni S1, S2…) oppure l\'intero esercizio. Quando completi tutte le serie l\'esercizio si spunta da solo e il progresso della giornata resta memorizzato sul dispositivo.' },
+      { icon: Download, t: 'Progressioni globali & Scarica dati', d: 'In cima alla scheda trovi il pulsante "📊 Progressioni & Scarica Dati" per visualizzare tutte le variazioni di peso e scaricare un file Excel CSV (con colonne dedicate Serie 1..Serie 5) oppure copiare il report per il tuo PT o per un\'AI.' },
       { icon: ShieldCheck, t: 'Riservatezza del tuo link', d: 'Il link della scheda è strettamente personale e non richiede login: conservalo nei tuoi preferiti e non condividerlo pubblicamente per evitare modifiche accidentali ai tuoi dati di allenamento.' }
     ]
   },
@@ -28,14 +30,16 @@ const CONTENT = {
     intro: 'Everything you need to follow your workout, track weights, and inspect your progress directly from your smartphone.',
     steps: [
       { icon: CalendarDays, t: 'Pick the workout day', d: 'Tabs at the top (Day A, B, C…). Tap today\'s routine, or use the "Prev Day" / "Next Day" buttons at the bottom.' },
+      { icon: Play, t: 'Guided Workout step-by-step', d: 'Tap "▶ Guided Workout" and pick your day: focus on one exercise at a time with a set-weighted progress bar, zoomed timer (Pause, Skip rest, and live Weight edit), and encouraging messages. If your phone locks or resets, reopening asks to resume right where you left off.' },
       { icon: LayoutList, t: 'List vs Details view mode', d: 'Switch between compact "List" view (perfect for quick reading and 1-tap rest countdowns) and extended "Details" view.' },
-      { icon: TrendingUp, t: 'Update your weights', d: 'Whenever you increase your load, tap the "Weight" card to log the new weight. Multiple edits on the same day are automatically consolidated into that day\'s latest value.' },
-      { icon: Scale, t: 'Progression chart & Trendline', d: 'Tap the chart icon next to the weight to inspect your 3-month (~12 weeks) progression window with an automated trendline and quarterly navigation.' },
+      { icon: Layers, t: 'Per-set rows (Pyramids & variable sets)', d: 'If your trainer programmed varying reps or weights per set (pyramids), Details mode shows 1 clean row per set (S1..S5) with editable weights and individual rest buttons.' },
+      { icon: TrendingUp, t: 'Update your weights', d: 'Whenever you increase your load on an exercise or individual set, tap the weight to log the new load. Multiple edits on the same day automatically consolidate into that day\'s latest values.' },
+      { icon: Scale, t: 'Progression chart & Trendline', d: 'Tap the chart icon next to the weight to inspect your 3-month (~12 weeks) progression window with a linear trendline, per-set filter pills, and quarterly navigation.' },
       { icon: Timer, t: '1-tap rest countdown timer', d: 'Tap the "Rest" box or the play icon to start the rest timer between sets, with acoustic alert upon completion.' },
       { icon: Eye, t: 'Biomechanical GIFs & Instructions', d: 'Tap the exercise thumbnail or "Animation" to inspect verified execution GIFs and step-by-step biomechanical cues.' },
       { icon: StickyNote, t: 'Trainer notes', d: 'Under each exercise, check personal guidelines from your trainer regarding tempo, RIR/RPE, posture, and execution cues.' },
-      { icon: CheckCircle2, t: 'Tick completed exercises', d: 'Tap the badge number on the left of each exercise to check it off. Active session completion is tracked in real-time.' },
-      { icon: Download, t: 'Global progress & Export data', d: 'Tap "📊 Progressions & Export Data" at the top to inspect all weight adjustments across all exercises and export a clean CSV or AI-ready table.' },
+      { icon: CheckCircle2, t: 'Check off sets & exercises manually', d: 'Even outside Guided Workout mode, you can manually tap S1, S2… pills to check off individual sets or the exercise badge. Completing all sets auto-checks the exercise, and daily progress stays saved on your device.' },
+      { icon: Download, t: 'Global progress & Export data', d: 'Tap "📊 Progressions & Export Data" at the top to inspect all weight adjustments and export a clean CSV with Set 1..Set 5 columns or copy an AI-ready table.' },
       { icon: ShieldCheck, t: 'Privacy & Link security', d: 'Your routine link is strictly personal with zero sign-up friction: bookmark it and keep it private to avoid unwanted modifications.' }
     ]
   },
@@ -44,14 +48,16 @@ const CONTENT = {
     intro: 'Todas las pautas para seguir tu entrenamiento, registrar cargas y supervisar tu progreso desde tu móvil.',
     steps: [
       { icon: CalendarDays, t: 'Elige el día', d: 'Arriba verás las pestañas (Día A, B, C…). Toca la de hoy o usa los botones "Día Ant." / "Día Sig." al final de la página.' },
+      { icon: Play, t: 'Entrenamiento Guiado paso a paso', d: 'Pulsa "▶ Entrenamiento Guiado" y elige el día: enfócate en un ejercicio a la vez con barra de progreso por serie, temporizador ampliado (Pausa, Saltar descanso y edición rápida de peso) y frases motivadoras. Si el móvil se bloquea, al volver te preguntará si deseas continuar donde lo dejaste.' },
       { icon: LayoutList, t: 'Vista Lista o Detalles', d: 'Alterna entre la vista compacta "Lista" (para leer series/reps al vuelo e iniciar descanso con 1 toque) y la vista "Detalles" con biomecánica completa.' },
-      { icon: TrendingUp, t: 'Actualiza tus cargas (Peso)', d: 'Cuando subas de peso, toca la tarjeta de "Carga" para anotar el nuevo valor. Varias modificaciones en un mismo día se consolidan automáticamente.' },
-      { icon: Scale, t: 'Gráfico de progresión y tendencia', d: 'Toca el icono de gráfico junto a la carga para ver tu evolución en los últimos 3 meses (~12 semanas), con línea de tendencia y navegación trimestral.' },
+      { icon: Layers, t: 'Series diferenciadas (Pirámides)', d: 'Si tu entrenador programó series con repeticiones o cargas distintas, en Detalles verás una fila por serie (S1..S5) con peso editable y temporizador individual.' },
+      { icon: TrendingUp, t: 'Actualiza tus cargas (Peso)', d: 'Cuando subas de peso en un ejercicio o serie, toca la carga para anotar el nuevo valor. Varias modificaciones en el mismo día se consolidan automáticamente.' },
+      { icon: Scale, t: 'Gráfico de progresión y tendencia', d: 'Toca el icono de gráfico junto a la carga para ver tu evolución en los últimos 3 meses (~12 semanas), con línea de tendencia y filtro por serie.' },
       { icon: Timer, t: 'Temporizador de descanso', d: 'Toca el recuadro "Descanso" o el icono de reproducción para iniciar la cuenta atrás entre series con aviso sonoro.' },
       { icon: Eye, t: 'Animaciones biomecánicas', d: 'Toca la imagen o "Animación" para ver el GIF del ejercicio y leer las instrucciones biomecánicas de ejecución.' },
       { icon: StickyNote, t: 'Notas del entrenador', d: 'Bajo cada ejercicio encontrarás recomendaciones de tu preparador: tempo, descansos, respiración y pautas técnicas.' },
-      { icon: CheckCircle2, t: 'Marca los ejercicios completados', d: 'Toca el número a la izquierda de cada ejercicio para marcarlo. El progreso de la sesión se calcula automáticamente en la cabecera.' },
-      { icon: Download, t: 'Progresiones globales y exportar', d: 'Arriba encontrarás "📊 Progresiones & Descargar Datos" para ver todos los aumentos y descargar un CSV para Excel o copiar el reporte para tu entrenador o IA.' },
+      { icon: CheckCircle2, t: 'Marca series y ejercicios manualmente', d: 'También fuera del Entrenamiento Guiado puedes marcar manualmente cada serie (S1, S2…) o el ejercicio completo. Al completar todas las series el ejercicio se marca solo y el avance del día queda guardado en tu dispositivo.' },
+      { icon: Download, t: 'Progresiones globales y exportar', d: 'Arriba encontrarás "📊 Progresiones & Descargar Datos" para descargar un CSV para Excel (con columnas Serie 1..Serie 5) o copiar el reporte para tu entrenador o IA.' },
       { icon: ShieldCheck, t: 'Seguridad y privacidad del enlace', d: 'Tu enlace es estrictamente personal: guárdalo en favoritos y no lo compartas públicamente para evitar alteraciones accidentales en tus cargas.' }
     ]
   }

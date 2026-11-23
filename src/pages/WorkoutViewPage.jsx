@@ -13,6 +13,11 @@ import { playTimerCompleteSound } from '../utils/sound';
 import { getWorkoutById, trackWorkoutView, updateExerciseWeight } from '../services/workoutService';
 import ExerciseProgressModal from '../components/ExerciseProgressModal';
 import GlobalProgressExportModal from '../components/GlobalProgressExportModal';
+import GuidedWorkoutModal, {
+  getExerciseSetCount,
+  loadSavedGuidedSession,
+  clearSavedGuidedSession
+} from '../components/GuidedWorkoutModal';
 
 const RECENT_KEY = 'gymlink_recent_workouts';
 
@@ -214,6 +219,7 @@ function normalizeWorkout(raw, fallbackId) {
           sets: ex?.sets || '—',
           reps: ex?.reps || '—',
           weight: ex?.weight || '',
+          setDetails: Array.isArray(ex?.setDetails) ? ex.setDetails : null,
           weightHistory: Array.isArray(ex?.weightHistory) ? ex.weightHistory : [],
           rest: ex?.rest || '60"',
           notes: ex?.notes || '',
@@ -250,9 +256,43 @@ export default function WorkoutViewPage() {
   const [workout, setWorkout] = useState(null);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [expandedExerciseId, setExpandedExerciseId] = useState(null);
-  const [completedExercises, setCompletedExercises] = useState({});
+  const todayIso = new Date().toISOString().split('T')[0];
+  const dayProgressKey = `gymlink_day_progress_${id}_${todayIso}`;
+
+  const [completedExercises, setCompletedExercises] = useState(() => {
+    try {
+      const saved = localStorage.getItem(dayProgressKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.completedExercises || {};
+      }
+    } catch { /* ignore */ }
+    return {};
+  });
+  const [completedSets, setCompletedSets] = useState(() => {
+    try {
+      const saved = localStorage.getItem(dayProgressKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.completedSets || {};
+      }
+    } catch { /* ignore */ }
+    return {};
+  });
   const [copiedLink, setCopiedLink] = useState(false);
   const [, setDbRefresh] = useState(0);
+
+  // Salvataggio automatico progresso giornaliero (serie & esercizi spuntati) su dispositivo
+  useEffect(() => {
+    if (!id) return;
+    try {
+      localStorage.setItem(dayProgressKey, JSON.stringify({ completedExercises, completedSets }));
+    } catch { /* ignore */ }
+  }, [id, dayProgressKey, completedExercises, completedSets]);
+
+  // Ripresa automatica Allenamento Guidato interrotto (es. telefono spento / bloccato)
+  const [pendingGuidedResume, setPendingGuidedResume] = useState(null);
+  const [activeResumeSession, setActiveResumeSession] = useState(null);
 
   // Pre-caricamento in background del dataset esercizi per traduzioni dinamiche istantanee delle istruzioni
   useEffect(() => {
@@ -271,22 +311,23 @@ export default function WorkoutViewPage() {
     localStorage.setItem('gymlink_view_mode', mode);
   };
 
-  // Modali Progressioni
+  // Modali Progressioni & Allenamento Guidato
   const [progressModalEx, setProgressModalEx] = useState(null); // esercizio selezionato per modale grafico
   const [isGlobalExportOpen, setIsGlobalExportOpen] = useState(false);
-  const [editingWeightExId, setEditingWeightExId] = useState(null);
+  const [isGuidedOpen, setIsGuidedOpen] = useState(false);
+  const [editingWeightTarget, setEditingWeightTarget] = useState(null); // { exId, setIndex }
   const [editWeightVal, setEditWeightVal] = useState('');
   const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
 
-  // Gestione aggiornamento peso cliente
-  const handleSaveEditedWeight = async (exerciseId) => {
+  // Gestione aggiornamento peso cliente (classico o per singola serie)
+  const handleSaveEditedWeight = async (exerciseId, setIndex = null) => {
     if (!editWeightVal.trim() || !workout?.id) {
-      setEditingWeightExId(null);
+      setEditingWeightTarget(null);
       return;
     }
     setIsUpdatingWeight(true);
     try {
-      const res = await updateExerciseWeight(workout.id, exerciseId, editWeightVal.trim());
+      const res = await updateExerciseWeight(workout.id, exerciseId, editWeightVal.trim(), setIndex);
       if (res.success && res.updatedWorkout) {
         setWorkout(res.updatedWorkout);
       }
@@ -294,8 +335,58 @@ export default function WorkoutViewPage() {
       console.error('Errore aggiornamento peso:', err);
     } finally {
       setIsUpdatingWeight(false);
-      setEditingWeightExId(null);
+      setEditingWeightTarget(null);
     }
+  };
+
+  const handleUpdateWeightFromGuided = async (exerciseId, newVal, setIndex = null) => {
+    if (!workout?.id || !exerciseId || !String(newVal).trim()) return;
+    try {
+      const res = await updateExerciseWeight(workout.id, exerciseId, String(newVal).trim(), setIndex);
+      if (res.success && res.updatedWorkout) {
+        setWorkout(res.updatedWorkout);
+      }
+    } catch (err) {
+      console.error('Errore aggiornamento peso da Allenamento Guidato:', err);
+    }
+  };
+
+  const handleMarkExerciseCompletedFromGuided = (exerciseId) => {
+    if (!exerciseId) return;
+    setCompletedExercises((prev) => ({
+      ...prev,
+      [exerciseId]: true
+    }));
+  };
+
+  const handleMarkSetCompletedFromGuided = (exerciseId, setIdx) => {
+    if (!exerciseId) return;
+    setCompletedSets((prev) => ({
+      ...prev,
+      [`${exerciseId}_${setIdx}`]: true
+    }));
+  };
+
+  const handleToggleSetCompleted = (ex, setIdx) => {
+    if (!ex?.id) return;
+    const key = `${ex.id}_${setIdx}`;
+    const totalSets = getExerciseSetCount(ex);
+
+    setCompletedSets((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      let allDone = true;
+      for (let i = 0; i < totalSets; i++) {
+        if (!next[`${ex.id}_${i}`]) {
+          allDone = false;
+          break;
+        }
+      }
+      setCompletedExercises((prevEx) => ({
+        ...prevEx,
+        [ex.id]: allDone
+      }));
+      return next;
+    });
   };
 
   // Stato apertura/chiusura testata protocollo (aperto al caricamento, auto-chiuso allo scroll e persistente)
@@ -360,14 +451,24 @@ export default function WorkoutViewPage() {
       try {
         const data = await getWorkoutById(id);
         if (isMounted) {
-          setWorkout(normalizeWorkout(data, id));
+          const normalized = normalizeWorkout(data, id);
+          setWorkout(normalized);
+          const savedSession = loadSavedGuidedSession(normalized.id);
+          if (savedSession) {
+            setPendingGuidedResume(savedSession);
+          }
           // Traccia la visualizzazione in modo atomico (con protezione anti-refresh per sessione)
           trackWorkoutView(id);
         }
       } catch (err) {
         console.warn('Errore load workout:', err);
         if (isMounted) {
-          setWorkout(normalizeWorkout(null, id));
+          const normalized = normalizeWorkout(null, id);
+          setWorkout(normalized);
+          const savedSession = loadSavedGuidedSession(normalized.id);
+          if (savedSession) {
+            setPendingGuidedResume(savedSession);
+          }
         }
       }
     }
@@ -412,10 +513,22 @@ export default function WorkoutViewPage() {
   };
 
   const handleToggleCompleted = (exId) => {
+    const newState = !completedExercises[exId];
     setCompletedExercises((prev) => ({
       ...prev,
-      [exId]: !prev[exId]
+      [exId]: newState
     }));
+    const targetEx = exercisesList.find((e) => e.id === exId);
+    if (targetEx) {
+      const totalSets = getExerciseSetCount(targetEx);
+      setCompletedSets((prev) => {
+        const next = { ...prev };
+        for (let i = 0; i < totalSets; i++) {
+          next[`${exId}_${i}`] = newState;
+        }
+        return next;
+      });
+    }
   };
 
   const handleCopyLink = () => {
@@ -456,6 +569,45 @@ export default function WorkoutViewPage() {
 
   return (
     <div className="max-w-[1000px] mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6">
+
+      {/* Banner Ripresa Allenamento Guidato interrotto */}
+      {pendingGuidedResume && !isGuidedOpen && (
+        <div className="rounded-2xl border-2 border-acc bg-acc/10 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-[0_0_24px_-6px_var(--glow)] gl-rise">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-acc font-mono text-xs font-bold uppercase tracking-wider">
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{t('guidedResumeTitle')}</span>
+            </div>
+            <p className="text-xs sm:text-sm font-sans text-fg">
+              {t('guidedResumeDesc')}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveResumeSession(pendingGuidedResume);
+                setPendingGuidedResume(null);
+                setIsGuidedOpen(true);
+              }}
+              className="gl-btn-primary !h-9 !px-4 text-xs font-mono font-bold inline-flex items-center gap-1.5"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{t('guidedResumeBtn')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearSavedGuidedSession(workout?.id);
+                setPendingGuidedResume(null);
+              }}
+              className="gl-btn !h-9 !px-3 text-xs font-mono text-dim hover:text-fg"
+            >
+              {t('guidedDiscardResumeBtn')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Banner se il PT ha attivato l'anteprima esatta del cliente */}
       {isPtUser && forceClientPreview && (
@@ -704,19 +856,43 @@ export default function WorkoutViewPage() {
           })}
         </div>
 
-        {/* Titolo Giorno Attivo & Selettore Visualizzazione Elenco/Dettagli */}
-        <div className="flex items-center justify-between px-1">
-          <h2 className="font-dot font-extrabold text-[16px] sm:text-[18px] text-fg tracking-wide uppercase">
-            {currentDay?.title || `Giorno ${String.fromCharCode(65 + activeDayIndex)}`}
-          </h2>
+        {/* Titolo Giorno Attivo, Allenamento Guidato & Selettore Visualizzazione Elenco/Dettagli */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-1">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-dot font-extrabold text-[16px] sm:text-[18px] text-fg tracking-wide uppercase">
+              {currentDay?.title || `Giorno ${String.fromCharCode(65 + activeDayIndex)}`}
+            </h2>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline text-xs font-mono text-dim mr-1">
+            {exercisesList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsGuidedOpen(true)}
+                className="sm:hidden gl-btn-primary !h-8 !px-3 !text-xs font-mono font-bold inline-flex items-center gap-1.5 shadow-[0_0_16px_-4px_var(--glow)] shrink-0"
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>{t('btnGuidedWorkout')}</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between sm:justify-end gap-2">
+            {exercisesList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsGuidedOpen(true)}
+                className="hidden sm:inline-flex gl-btn-primary !h-8 !px-3.5 !text-xs font-mono font-bold items-center gap-1.5 shadow-[0_0_16px_-4px_var(--glow)]"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>{t('btnGuidedWorkout')}</span>
+              </button>
+            )}
+
+            <span className="hidden md:inline text-xs font-mono text-dim mr-1">
               {exercisesList.length} {t('navExercises').toLowerCase()}
             </span>
 
             {/* Toggle Tipo Visualizzazione: Elenco Compatto vs Dettagli Estesi */}
-            <div className="flex items-center p-0.5 rounded-lg border border-sline bg-bg2/90">
+            <div className="flex items-center p-0.5 rounded-lg border border-sline bg-bg2/90 ml-auto sm:ml-0">
               <button
                 type="button"
                 onClick={() => handleToggleViewMode('compact')}
@@ -727,7 +903,7 @@ export default function WorkoutViewPage() {
                 title="Visualizzazione compatta ad elenco (solo titoli e serie)"
               >
                 <LayoutList className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">{t('viewModeList')}</span>
+                <span>{t('viewModeList')}</span>
               </button>
               <button
                 type="button"
@@ -739,7 +915,7 @@ export default function WorkoutViewPage() {
                 title="Visualizzazione dettagliata con parametri e carichi completi"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">{t('viewModeDetails')}</span>
+                <span>{t('viewModeDetails')}</span>
               </button>
             </div>
           </div>
@@ -827,9 +1003,9 @@ export default function WorkoutViewPage() {
                       </div>
                     </div>
 
-                    {/* Nome Esercizio e Tag (Più grande, marcato ed evidente) */}
+                    {/* Nome Esercizio e Tag (Più grande, marcato ed evidente, mai troncato su mobile) */}
                     <div className="min-w-0 flex-1">
-                      <h3 className={`font-dot font-black text-[15px] sm:text-[18px] leading-snug tracking-wide text-fg truncate ${isCompleted ? 'line-through text-dim' : ''
+                      <h3 className={`font-dot font-black text-[15px] sm:text-[18px] leading-snug tracking-wide text-fg break-words ${isCompleted ? 'line-through text-dim' : ''
                         }`}>
                         {getExerciseDisplayName(ex.name, lang)}
                       </h3>
@@ -895,30 +1071,15 @@ export default function WorkoutViewPage() {
                 {/* Se non è in modalità sintetica compatta, oppure se è espanso, mostra la griglia parametri completa con note */}
                 {(!isRowCompact || isExpanded) && (
                   <>
-                    {/* Telemetria Parametri di Carico (FMDB Digital Grid) */}
-                    <div className="p-3 sm:px-5 sm:py-3.5 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono text-xs border-b border-sline/40">
-
-                      {/* SERIE */}
-                      <div className="gl-param-card p-2.5 sm:p-3">
-                        <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblSets')}</span>
-                        <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
-                          {ex.sets || '—'}
-                        </span>
-                      </div>
-
-                      {/* REPS */}
-                      <div className="gl-param-card p-2.5 sm:p-3">
-                        <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblReps')}</span>
-                        <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
-                          {ex.reps || '—'}
-                        </span>
-                      </div>
-
-                      {/* CARICO / PESO (Modificabile dall'atleta o PT con storico progressivo) */}
-                      <div className="gl-param-card p-2.5 sm:p-3 relative group">
-                        <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
-                          <span>{t('lblWeight')}</span>
+                    {/* Telemetria Parametri di Carico: Serie divise per righe (Piramidali) oppure griglia classica 4 card */}
+                    {Array.isArray(ex.setDetails) && ex.setDetails.length > 0 ? (
+                      <div className="p-3 sm:px-5 sm:py-3.5 bg-bg2 border-b border-sline/40 space-y-2 font-mono text-xs">
+                        {/* Intestazione colonna con icona Grafico */}
+                        <div className="grid grid-cols-[44px_1fr_1.2fr_1fr] gap-2 items-center text-[9.5px] text-dim uppercase tracking-wider font-bold px-2">
+                          <span>{t('lblSets')}</span>
+                          <span>{t('lblReps')}</span>
                           <div className="flex items-center gap-1">
+                            <span>{t('lblWeight')}</span>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -926,89 +1087,256 @@ export default function WorkoutViewPage() {
                                 setProgressModalEx(ex);
                               }}
                               className="text-acc hover:text-fg p-0.5 rounded hover:bg-acc/10"
-                              title="Visualizza grafico progressione e trendline"
+                              title={t('tooltipViewTrend')}
                             >
                               <TrendingUp className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingWeightExId(ex.id);
-                                setEditWeightVal(ex.weight || '');
-                              }}
-                              className="text-dim hover:text-acc p-0.5 rounded hover:bg-bg"
-                              title="Modifica o aumenta il carico"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </button>
                           </div>
+                          <span className="text-right">{t('lblRest')}</span>
                         </div>
 
-                        {editingWeightExId === ex.id ? (
-                          <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="text"
-                              value={editWeightVal}
-                              onChange={(e) => setEditWeightVal(e.target.value)}
-                              placeholder="es. 75 kg"
-                              className="gl-input !h-7 !px-2 font-mono text-xs !text-acc font-bold flex-1"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveEditedWeight(ex.id);
-                                if (e.key === 'Escape') setEditingWeightExId(null);
-                              }}
-                            />
-                            <button
-                              type="button"
-                              disabled={isUpdatingWeight}
-                              onClick={() => handleSaveEditedWeight(ex.id)}
-                              className="gl-btn-primary !h-7 !px-2 text-xs font-mono"
-                            >
-                              {t('btnSave') || 'Salva'}
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingWeightExId(ex.id);
-                              setEditWeightVal(ex.weight || '');
-                            }}
-                            className="cursor-pointer flex items-center justify-between mt-0.5"
-                            title="Clicca per aggiornare il carico di oggi"
-                          >
-                            <span className="font-bold text-acc text-sm sm:text-base font-mono block">
-                              {ex.weight || (lang === 'en' ? 'By feel' : lang === 'es' ? 'Por sensaciones' : 'A sensazione')}
-                            </span>
-                            {Array.isArray(ex.weightHistory) && ex.weightHistory.length > 0 && (
-                              <span className="text-[10px] font-mono text-dim">
-                                📈 +{ex.weightHistory.length}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                        {/* Una riga per ogni serie */}
+                        <div className="space-y-1.5">
+                          {ex.setDetails.map((setRow, sIdx) => {
+                            const isEditingThisSet =
+                              editingWeightTarget?.exId === ex.id && editingWeightTarget?.setIndex === sIdx;
+                            const isSetDone = !!completedSets[`${ex.id}_${sIdx}`];
 
-                      {/* RECUPERO (CON ICONCINA PLAY SEMPRE EVIDENTE E AVVIO A UN TOCCO) */}
-                      <div
-                        onClick={() => ex.rest && handleStartRestTimer(ex.rest)}
-                        className="gl-param-card p-2.5 sm:p-3 cursor-pointer group hover:border-acc transition-colors"
-                        title="Clicca per avviare il countdown di recupero"
-                      >
-                        <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
-                          <span>{t('lblRest')}</span>
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-acc/15 text-acc text-[9px] font-bold">
-                            <Play className="w-2.5 h-2.5 fill-current" />
-                            <span>{t('lblStartTimer')}</span>
+                            return (
+                              <div
+                                key={sIdx}
+                                className={`grid grid-cols-[44px_1fr_1.2fr_1fr] gap-2 items-center p-2 rounded-xl border transition-all ${
+                                  isSetDone
+                                    ? 'border-acc/40 bg-acc/10 opacity-80'
+                                    : 'border-sline/70 bg-bg/60'
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleSetCompleted(ex, sIdx);
+                                  }}
+                                  className={`inline-flex items-center justify-center gap-0.5 w-9 h-7 rounded-lg border font-bold text-xs transition-all ${
+                                    isSetDone
+                                      ? 'border-acc bg-acc text-ink shadow-sm'
+                                      : 'border-acc/30 bg-acc/15 text-acc hover:border-acc'
+                                  }`}
+                                  title={isSetDone ? t('tooltipMarkTodo') : t('tooltipMarkDone')}
+                                >
+                                  {isSetDone ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <span>S{sIdx + 1}</span>}
+                                </button>
+
+                                <span className={`font-bold text-xs sm:text-sm ${isSetDone ? 'line-through text-dim' : 'text-fg'}`}>
+                                  {setRow.reps || '—'}
+                                </span>
+
+                                <div onClick={(e) => e.stopPropagation()}>
+                                  {isEditingThisSet ? (
+                                    <div className="flex items-center gap-1">
+                                      <input
+                                        type="text"
+                                        value={editWeightVal}
+                                        onChange={(e) => setEditWeightVal(e.target.value)}
+                                        placeholder="75 kg"
+                                        className="gl-input !h-7 !px-1.5 font-mono text-xs !text-acc font-bold w-16 sm:w-20"
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleSaveEditedWeight(ex.id, sIdx);
+                                          if (e.key === 'Escape') setEditingWeightTarget(null);
+                                        }}
+                                      />
+                                      <button
+                                        type="button"
+                                        disabled={isUpdatingWeight}
+                                        onClick={() => handleSaveEditedWeight(ex.id, sIdx)}
+                                        className="gl-btn-primary !h-7 !px-1.5 text-[10px] font-mono"
+                                      >
+                                        <Check className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingWeightTarget({ exId: ex.id, setIndex: sIdx });
+                                        setEditWeightVal(setRow.weight || '');
+                                      }}
+                                      className="inline-flex items-center gap-1 font-bold text-acc hover:underline text-xs sm:text-sm text-left"
+                                      title={t('tooltipEditWeight')}
+                                    >
+                                      <span>{setRow.weight || '—'}</span>
+                                      <Edit3 className="w-3 h-3 text-dim opacity-70 shrink-0" />
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="flex justify-end">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartRestTimer(setRow.rest || ex.rest || '60"');
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-acc/40 bg-acc/10 text-acc hover:bg-acc hover:text-ink font-mono text-xs font-bold transition-all"
+                                    title={t('tooltipStartRest')}
+                                  >
+                                    <Play className="w-2.5 h-2.5 fill-current" />
+                                    <span>{setRow.rest || ex.rest || '60"'}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                      <div className="p-3 sm:px-5 sm:py-3.5 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono text-xs border-b border-sline/40">
+
+                        {/* SERIE */}
+                        <div className="gl-param-card p-2.5 sm:p-3">
+                          <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblSets')}</span>
+                          <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
+                            {ex.sets || '—'}
                           </span>
                         </div>
-                        <span className="font-bold text-fg group-hover:text-acc text-sm sm:text-base font-mono block mt-0.5">
-                          {ex.rest || '60"'}
-                        </span>
-                      </div>
 
-                    </div>
+                        {/* REPS */}
+                        <div className="gl-param-card p-2.5 sm:p-3">
+                          <span className="block text-[9.5px] text-dim uppercase tracking-wider font-bold">{t('lblReps')}</span>
+                          <span className="font-bold text-fg text-sm sm:text-base font-mono block mt-0.5">
+                            {ex.reps || '—'}
+                          </span>
+                        </div>
+
+                        {/* CARICO / PESO (Modificabile dall'atleta o PT con storico progressivo) */}
+                        <div className="gl-param-card p-2.5 sm:p-3 relative group">
+                          <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
+                            <span>{t('lblWeight')}</span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setProgressModalEx(ex);
+                                }}
+                                className="text-acc hover:text-fg p-0.5 rounded hover:bg-acc/10"
+                                title="Visualizza grafico progressione e trendline"
+                              >
+                                <TrendingUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingWeightTarget({ exId: ex.id, setIndex: null });
+                                  setEditWeightVal(ex.weight || '');
+                                }}
+                                className="text-dim hover:text-acc p-0.5 rounded hover:bg-bg"
+                                title="Modifica o aumenta il carico"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {editingWeightTarget?.exId === ex.id && editingWeightTarget?.setIndex === null ? (
+                            <div className="mt-1 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="text"
+                                value={editWeightVal}
+                                onChange={(e) => setEditWeightVal(e.target.value)}
+                                placeholder="es. 75 kg"
+                                className="gl-input !h-7 !px-2 font-mono text-xs !text-acc font-bold flex-1"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleSaveEditedWeight(ex.id, null);
+                                  if (e.key === 'Escape') setEditingWeightTarget(null);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                disabled={isUpdatingWeight}
+                                onClick={() => handleSaveEditedWeight(ex.id, null)}
+                                className="gl-btn-primary !h-7 !px-2 text-xs font-mono"
+                              >
+                                {t('btnSave') || 'Salva'}
+                              </button>
+                            </div>
+                          ) : (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingWeightTarget({ exId: ex.id, setIndex: null });
+                                setEditWeightVal(ex.weight || '');
+                              }}
+                              className="cursor-pointer flex items-center justify-between mt-0.5"
+                              title="Clicca per aggiornare il carico di oggi"
+                            >
+                              <span className="font-bold text-acc text-sm sm:text-base font-mono block">
+                                {ex.weight || (lang === 'en' ? 'By feel' : lang === 'es' ? 'Por sensaciones' : 'A sensazione')}
+                              </span>
+                              {Array.isArray(ex.weightHistory) && ex.weightHistory.length > 0 && (
+                                <span className="text-[10px] font-mono text-dim">
+                                  📈 +{ex.weightHistory.length}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RECUPERO (CON ICONCINA PLAY SEMPRE EVIDENTE E AVVIO A UN TOCCO) */}
+                        <div
+                          onClick={() => ex.rest && handleStartRestTimer(ex.rest)}
+                          className="gl-param-card p-2.5 sm:p-3 cursor-pointer group hover:border-acc transition-colors"
+                          title="Clicca per avviare il countdown di recupero"
+                        >
+                          <div className="flex items-center justify-between text-[9.5px] text-dim uppercase tracking-wider font-bold">
+                            <span>{t('lblRest')}</span>
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-acc/15 text-acc text-[9px] font-bold">
+                              <Play className="w-2.5 h-2.5 fill-current" />
+                              <span>{t('lblStartTimer')}</span>
+                            </span>
+                          </div>
+                          <span className="font-bold text-fg group-hover:text-acc text-sm sm:text-base font-mono block mt-0.5">
+                            {ex.rest || '60"'}
+                          </span>
+                        </div>
+
+                      </div>
+                      {/* Barra smarcamento manuale singole serie per esercizi classici */}
+                      {getExerciseSetCount(ex) > 0 && (
+                        <div className="px-3 sm:px-5 py-2 bg-bg2/60 border-b border-sline/40 flex items-center gap-1.5 flex-wrap font-mono text-xs">
+                          <span className="text-[10px] text-dim uppercase tracking-wider mr-1 font-bold">
+                            {t('lblSets')}:
+                          </span>
+                          {Array.from({ length: getExerciseSetCount(ex) }, (_, sIdx) => {
+                            const isSetDone = !!completedSets[`${ex.id}_${sIdx}`];
+                            return (
+                              <button
+                                key={sIdx}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleSetCompleted(ex, sIdx);
+                                }}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                                  isSetDone
+                                    ? 'border-acc bg-acc text-ink shadow-sm'
+                                    : 'border-sline bg-bg text-dim hover:border-acc hover:text-fg'
+                                }`}
+                                title={isSetDone ? t('tooltipMarkTodo') : t('tooltipMarkDone')}
+                              >
+                                {isSetDone && <Check className="w-3 h-3 stroke-[3]" />}
+                                <span>S{sIdx + 1}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      </>
+                    )}
 
                     {/* Note Specifiche del PT per l'Esercizio */}
                     {ex.notes && (
@@ -1168,6 +1496,24 @@ export default function WorkoutViewPage() {
         isOpen={isGlobalExportOpen}
         onClose={() => setIsGlobalExportOpen(false)}
         workout={workout}
+      />
+
+      {/* Modalità Allenamento Guidato step-by-step */}
+      <GuidedWorkoutModal
+        isOpen={isGuidedOpen}
+        onClose={() => {
+          setIsGuidedOpen(false);
+          setActiveResumeSession(null);
+          setPendingGuidedResume(loadSavedGuidedSession(workout?.id));
+        }}
+        workout={workout}
+        initialDayIndex={activeDayIndex}
+        resumeSession={activeResumeSession}
+        onMarkExerciseCompleted={handleMarkExerciseCompletedFromGuided}
+        onMarkSetCompleted={handleMarkSetCompletedFromGuided}
+        onUpdateWeight={handleUpdateWeightFromGuided}
+        onClearSavedSession={() => setPendingGuidedResume(null)}
+        theme={theme}
       />
 
     </div>

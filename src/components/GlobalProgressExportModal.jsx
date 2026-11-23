@@ -24,6 +24,10 @@ export default function GlobalProgressExportModal({
     workout.days.forEach((day, dayIdx) => {
       if (Array.isArray(day.exercises)) {
         day.exercises.forEach((ex) => {
+          const hasSetDetails = Array.isArray(ex.setDetails) && ex.setDetails.length > 0;
+          const setSummary = hasSetDetails
+            ? ex.setDetails.map((s) => s.weight || '—').join(' / ')
+            : (ex.weight || 'A sensazione');
           allExercises.push({
             dayTitle: day.title || `Giorno ${String.fromCharCode(65 + dayIdx)}`,
             id: ex.id,
@@ -32,6 +36,8 @@ export default function GlobalProgressExportModal({
             sets: ex.sets || '—',
             reps: ex.reps || '—',
             weight: ex.weight || 'A sensazione',
+            displayWeight: setSummary,
+            setDetails: hasSetDetails ? ex.setDetails : null,
             history: Array.isArray(ex.weightHistory) ? ex.weightHistory : []
           });
         });
@@ -52,9 +58,19 @@ export default function GlobalProgressExportModal({
       const exDisplayName = getExerciseDisplayName(ex.name, lang);
       const exTargetName = translateTarget(ex.target, lang);
       text += `${idx + 1}. [${ex.dayTitle}] ${exDisplayName} (${exTargetName})\n`;
-      text += `   - Target: ${ex.sets} serie × ${ex.reps} reps | Carico attuale: ${ex.weight}\n`;
+      if (ex.setDetails) {
+        const setsStr = ex.setDetails.map((s, i) => `S${i + 1}: ${s.reps}x${s.weight || '—'}`).join(' | ');
+        text += `   - Serie variabili: ${setsStr}\n`;
+      } else {
+        text += `   - Target: ${ex.sets} serie × ${ex.reps} reps | Carico attuale: ${ex.weight}\n`;
+      }
       if (ex.history.length > 0) {
-        text += `   - Storico aumenti registrati: ${ex.history.map((h) => `${h.date}: ${h.raw || h.weight}`).join(' → ')}\n`;
+        text += `   - Storico aumenti registrati: ${ex.history.map((h) => {
+          const seriesStr = Array.isArray(h.setWeights) && h.setWeights.filter(Boolean).length > 1
+            ? `[${h.setWeights.filter(Boolean).join('/')}]`
+            : (h.raw || h.weight);
+          return `${h.date}: ${seriesStr}`;
+        }).join(' → ')}\n`;
       } else {
         text += `   - Storico: Nessuna variazione registrata finora.\n`;
       }
@@ -64,25 +80,49 @@ export default function GlobalProgressExportModal({
     return text;
   };
 
+  // Helper escape CSV
+  const csvEsc = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
   // Download CSV normalizzato per analisi e tabelle pivot Excel / AI:
-  // Una riga per ogni variazione temporale partendo dal carico iniziale.
-  // Ordine colonne: Esercizio, Target, Serie, Reps, Peso, Data
+  // Una riga per ogni variazione temporale con 5 colonne per le serie (Serie 1..Serie 5).
+  // Se un esercizio non è diviso, il peso compare solo su Serie 1.
   const handleDownloadCsv = () => {
-    let csv = 'Esercizio,Target,Serie,Reps,Peso,Data\n';
+    let csv = 'Esercizio,Target,Serie,Reps,Serie 1,Serie 2,Serie 3,Serie 4,Serie 5,Data\n';
 
     allExercises.forEach((ex) => {
       const exDisplayName = getExerciseDisplayName(ex.name, lang);
       const exTargetName = translateTarget(ex.target, lang);
       if (ex.history && ex.history.length > 0) {
-        // Se ci sono variazioni registrate, cicla cronologicamente tutti i punti (dal base alle variazioni successive)
         ex.history.forEach((h) => {
-          const weightVal = h.raw || (typeof h.weight === 'number' ? `${h.weight} kg` : h.weight);
-          csv += `"${exDisplayName}","${exTargetName}","${ex.sets}","${ex.reps}","${weightVal}","${h.date}"\n`;
+          let slots;
+          if (Array.isArray(h.setWeights)) {
+            slots = [0, 1, 2, 3, 4].map((i) => h.setWeights[i] || '');
+          } else {
+            const weightVal = h.raw || (typeof h.weight === 'number' ? `${h.weight} kg` : (h.weight || ''));
+            slots = [weightVal, '', '', '', ''];
+          }
+          csv += [
+            csvEsc(exDisplayName),
+            csvEsc(exTargetName),
+            csvEsc(ex.sets),
+            csvEsc(ex.reps),
+            ...slots.map(csvEsc),
+            csvEsc(h.date)
+          ].join(',') + '\n';
         });
       } else {
-        // Se non ci sono ancora variazioni registrate, emetti la riga con il carico iniziale della scheda
         const dateVal = workout.date || new Date().toISOString().split('T')[0];
-        csv += `"${exDisplayName}","${exTargetName}","${ex.sets}","${ex.reps}","${ex.weight}","${dateVal}"\n`;
+        const slots = ex.setDetails
+          ? [0, 1, 2, 3, 4].map((i) => ex.setDetails[i]?.weight || '')
+          : [ex.weight, '', '', '', ''];
+        csv += [
+          csvEsc(exDisplayName),
+          csvEsc(exTargetName),
+          csvEsc(ex.sets),
+          csvEsc(ex.reps),
+          ...slots.map(csvEsc),
+          csvEsc(dateVal)
+        ].join(',') + '\n';
       }
     });
 
@@ -144,7 +184,7 @@ export default function GlobalProgressExportModal({
                     {ex.sets} × {ex.reps}
                   </td>
                   <td className="p-2.5 text-acc font-bold">
-                    {ex.weight}
+                    {ex.displayWeight}
                   </td>
                   <td className="p-2.5 text-right text-dim">
                     {ex.history.length > 0 ? (

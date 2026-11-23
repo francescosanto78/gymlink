@@ -19,7 +19,7 @@ export default function TutorialPage() {
           <span>{t('tutorialBackHome')}</span>
         </Link>
         <span className="gl-tag" style={{ '--fc': 'rgb(var(--c-acc))' }}>
-          PT MANUAL • V1.1
+          PT MANUAL • V1.1.3
         </span>
       </div>
 

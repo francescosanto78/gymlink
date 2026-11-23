@@ -5,6 +5,31 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/)
 
 ---
 
+## [1.1.3] - 2026-11-23 (Allenamento Guidato, Piramidali & Mobile UX Fix)
+
+### 🛠️ Bug Fix & UX Mobile
+- **Nomi esercizi completi su Smartphone:** risolto il troncamento dei titoli degli esercizi nell'Editor PT (`src/pages/EditorPage.jsx`), nel Database Esercizi (`src/components/ExerciseSearchModal.jsx`) e nella scheda cliente (`src/pages/WorkoutViewPage.jsx`) riorganizzando i controlli su righe dedicate su mobile.
+- **Piramidali compatti su 1 riga anche da mobile:** in fase di compilazione scheda, ogni serie differenziata (`S1`–`S5`) viene mostrata su una singola riga orizzontale allineata (`S1 | Reps | Carico | Recupero`), identica alla vista atleta.
+
+### ✨ Nuove Funzionalità
+- **Serie Differenziate per Righe (Piramidali, max 5 serie):**
+  - Toggle opzionale **"Dividi serie (Piramidale)"** nell'Editor per impostare Reps, Carico e Recupero specifici per ciascuna serie (`S1`–`S5`).
+  - Vista estesa lato cliente dedicata con una riga interattiva per ogni serie, peso modificabile al tocco e pulsante recupero singolo.
+  - Storico giornaliero aggiornato con snapshot completo delle 5 serie (con regola di sovrascrittura nello stesso giorno) e filtro per singola serie / picco `Max` nel grafico Trendline.
+  - Esportazione **CSV Excel** aggiornata a 10 colonne con 5 colonne peso dedicate (`Serie 1`..`Serie 5`); per gli esercizi classici non divisi il carico viene inserito in `Serie 1`.
+- **Smarcamento Manuale delle Singole Serie & Salvataggio Giornaliero:**
+  - Anche fuori dalla modalità guidata è possibile spuntare manualmente ogni singola serie (`S1`, `S2`…) sia sugli esercizi piramidali che su quelli classici (barra dedicata), con spunta automatica dell'esercizio al completamento di tutte le serie e persistenza giornaliera su `localStorage`.
+- **Modalità "Allenamento Guidato" (Focus step-by-step):**
+  - Pulsante **"▶ Allenamento Guidato"** nella scheda atleta con scelta della giornata e visualizzazione dedicata a singolo esercizio.
+  - Barra di progressione e percentuale calcolate sul **numero totale di serie della giornata**.
+  - Guida chiara serie per serie con **timer zoomato ad alta leggibilità**, supporto Wake Lock e riacquisizione automatica al risveglio schermo, pausa, **Salta recupero / Avanti** e **Modifica peso al volo**.
+  - **Salvataggio continuo e Ripresa Automatica:** se lo schermo del cellulare si spegne o il browser va in risparmio energetico/riavvio, alla riapertura un prompt dedicato consente di riprendere l'Allenamento Guidato esattamente dall'esercizio, serie o recupero in corso.
+  - Avanzamento automatico allo scadere del timer con smarcamento delle serie, spunta automatica dell'esercizio completato e **100 frasi di incoraggiamento** variegate con intestazione ordinale (*"Primo esercizio completato!"*).
+  - Pulsante diretto **"🏁 Completa Allenamento"** sull'ultima serie dell'ultimo esercizio e schermata celebrativa finale.
+- **Guide & Manuali:** aggiornati Guida Atleta (`/guida`) e Manuale PT (`/tutorial`) alla `V1.1.3` in tutte e 3 le lingue (`IT / EN / ES`).
+
+---
+
 ## [1.1.0] - 2026-11-07 (Enhanced Athlete Experience & Progression Analytics)
 
 Aggiornamento mirato al miglioramento dell'esperienza utente in sala pesi, tracciamento del sovraccarico progressivo e supporto multilingua completo.

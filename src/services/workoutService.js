@@ -128,20 +128,26 @@ export async function trackWorkoutView(id) {
   }
 }
 
+function parseNumericWeight(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const cleanNumMatch = String(val).replace(',', '.').match(/[-+]?\d*\.?\d+/);
+  return cleanNumMatch ? parseFloat(cleanNumMatch[0]) : null;
+}
+
 /**
  * Aggiorna il carico di un esercizio salvando il nuovo punto nello storico pesi (weightHistory).
- * Operazione sicura sia per l'atleta che per il PT.
+ * Supporta sia esercizi classici (peso unico) che esercizi con serie differenziate (setDetails, max 5 serie).
+ * Regola del giorno singolo: più modifiche nella stessa data sovrascrivono il record del giorno.
  * @param {string} workoutId - ID della scheda
  * @param {string} exerciseId - ID univoco dell'esercizio da aggiornare
  * @param {string} newWeightStr - Nuovo valore inserito (es. "75 kg" o "75")
+ * @param {number|null} setIndex - Indice della serie (0..4) per esercizi piramidali/divisi, null per classici
  * @returns {Promise<{ success: boolean, updatedWorkout?: any }>}
  */
-export async function updateExerciseWeight(workoutId, exerciseId, newWeightStr) {
+export async function updateExerciseWeight(workoutId, exerciseId, newWeightStr, setIndex = null) {
   if (!workoutId || !exerciseId) return { success: false };
 
-  // Parse numerico approssimativo del carico per la trendline
-  const cleanNumMatch = String(newWeightStr).replace(',', '.').match(/[-+]?\d*\.?\d+/);
-  const numericWeight = cleanNumMatch ? parseFloat(cleanNumMatch[0]) : null;
+  const trimmedVal = String(newWeightStr).trim();
   const todayIso = new Date().toISOString().split('T')[0];
 
   const currentWorkout = await getWorkoutById(workoutId);
@@ -156,32 +162,96 @@ export async function updateExerciseWeight(workoutId, exerciseId, newWeightStr) 
       if (ex.id === exerciseId) {
         found = true;
         const prevHistory = Array.isArray(ex.weightHistory) ? ex.weightHistory : [];
-        
-        // Se la cronologia è vuota e l'esercizio aveva già un peso di partenza registrato alla creazione della scheda,
-        // inseriamo prima il punto base iniziale (con data creazione scheda o 7 giorni fa se oggi)
+        const hasSetDetails = Array.isArray(ex.setDetails) && ex.setDetails.length > 0;
+        const creationDate = currentWorkout.date || todayIso;
+
+        // Snapshot iniziale se la cronologia è vuota
         const initialPoints = [];
-        if (prevHistory.length === 0 && ex.weight && ex.weight !== 'A sensazione') {
-          const initMatch = String(ex.weight).replace(',', '.').match(/[-+]?\d*\.?\d+/);
-          const initNum = initMatch ? parseFloat(initMatch[0]) : null;
-          const creationDate = currentWorkout.date || todayIso;
-          initialPoints.push({
-            date: creationDate,
-            weight: initNum,
-            raw: String(ex.weight).trim(),
-            isInitial: true,
-            timestamp: new Date(creationDate).getTime() || (Date.now() - 86400000 * 7)
-          });
+        if (prevHistory.length === 0) {
+          if (hasSetDetails) {
+            const initSetWeights = [0, 1, 2, 3, 4].map((i) => String(ex.setDetails[i]?.weight || '').trim());
+            const initSetWeightsNum = initSetWeights.map((w) => parseNumericWeight(w));
+            const validInitNums = initSetWeightsNum.filter((n) => n !== null);
+            if ((validInitNums.length > 0 || initSetWeights.some(Boolean)) && creationDate !== todayIso) {
+              const initPeakNum = validInitNums.length > 0 ? Math.max(...validInitNums) : null;
+              let initPeakRaw = initSetWeights.find(Boolean) || '';
+              let best = -Infinity;
+              initSetWeights.forEach((r, idx) => {
+                if (initSetWeightsNum[idx] !== null && initSetWeightsNum[idx] >= best) {
+                  best = initSetWeightsNum[idx];
+                  initPeakRaw = r;
+                }
+              });
+              initialPoints.push({
+                date: creationDate,
+                weight: initPeakNum,
+                raw: initPeakRaw,
+                setWeights: initSetWeights,
+                setWeightsNum: initSetWeightsNum,
+                isInitial: true,
+                timestamp: new Date(creationDate).getTime() || (Date.now() - 86400000 * 7)
+              });
+            }
+          } else if (ex.weight && ex.weight !== 'A sensazione' && creationDate !== todayIso) {
+            const initRaw = String(ex.weight).trim();
+            const initNum = parseNumericWeight(initRaw);
+            initialPoints.push({
+              date: creationDate,
+              weight: initNum,
+              raw: initRaw,
+              setWeights: [initRaw, '', '', '', ''],
+              setWeightsNum: [initNum, null, null, null, null],
+              isInitial: true,
+              timestamp: new Date(creationDate).getTime() || (Date.now() - 86400000 * 7)
+            });
+          }
         }
 
-        const newPoint = {
-          date: todayIso,
-          weight: numericWeight,
-          raw: String(newWeightStr).trim(),
-          timestamp: Date.now()
-        };
+        let nextSetDetails = ex.setDetails;
+        let nextMainWeight = trimmedVal;
+        let newPoint;
+
+        if (hasSetDetails && setIndex !== null && setIndex >= 0 && setIndex < ex.setDetails.length) {
+          nextSetDetails = ex.setDetails.map((s, idx) =>
+            idx === setIndex ? { ...s, weight: trimmedVal } : s
+          );
+          const nextSetWeights = [0, 1, 2, 3, 4].map((i) => String(nextSetDetails[i]?.weight || '').trim());
+          const nextSetWeightsNum = nextSetWeights.map((w) => parseNumericWeight(w));
+          const validNums = nextSetWeightsNum.filter((n) => n !== null);
+          const peakNum = validNums.length > 0 ? Math.max(...validNums) : parseNumericWeight(trimmedVal);
+
+          let peakRaw = trimmedVal;
+          let best = -Infinity;
+          nextSetWeights.forEach((r, idx) => {
+            if (nextSetWeightsNum[idx] !== null && nextSetWeightsNum[idx] >= best) {
+              best = nextSetWeightsNum[idx];
+              peakRaw = r;
+            }
+          });
+          nextMainWeight = peakRaw || trimmedVal;
+
+          newPoint = {
+            date: todayIso,
+            weight: peakNum,
+            raw: peakRaw,
+            setWeights: nextSetWeights,
+            setWeightsNum: nextSetWeightsNum,
+            timestamp: Date.now()
+          };
+        } else {
+          const numericWeight = parseNumericWeight(trimmedVal);
+          newPoint = {
+            date: todayIso,
+            weight: numericWeight,
+            raw: trimmedVal,
+            setWeights: [trimmedVal, '', '', '', ''],
+            setWeightsNum: [numericWeight, null, null, null, null],
+            timestamp: Date.now()
+          };
+        }
 
         // Regola dello stesso giorno: se esiste già una variazione nella stessa data (todayIso),
-        // aggiorna quella variazione mantenendo solo l'ultimo valore del giorno!
+        // sovrascrive il record del giorno mantenendo solo l'ultimo valore registrato.
         const existingSameDayIdx = prevHistory.findIndex((p) => p.date === todayIso);
         let nextHistory;
         if (existingSameDayIdx >= 0) {
@@ -193,7 +263,8 @@ export async function updateExerciseWeight(workoutId, exerciseId, newWeightStr) 
 
         return {
           ...ex,
-          weight: String(newWeightStr).trim(),
+          weight: nextMainWeight,
+          ...(hasSetDetails ? { setDetails: nextSetDetails } : {}),
           weightHistory: nextHistory
         };
       }

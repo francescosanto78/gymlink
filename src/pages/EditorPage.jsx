@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, useParams, Link } from 'react-router-dom'
 import {
   ArrowLeft, Plus, Search, Trash2, ArrowUp, ArrowDown, ChevronDown, ChevronUp,
   Save, Eye, Check, AlertCircle, Dumbbell, Calendar, User, FileText, Sparkles,
-  RotateCcw, Image as ImageIcon, Link as LinkIcon, ExternalLink, Share2, Copy
+  RotateCcw, Image as ImageIcon, Link as LinkIcon, ExternalLink, Share2, Copy, Layers
 } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useLanguage } from '../context/LanguageContext';
@@ -302,6 +302,113 @@ export default function EditorPage() {
           return { ...ex, [field]: value };
         }
         return ex;
+      });
+      days[activeDayIndex] = { ...day, exercises };
+      return { ...prev, days };
+    });
+  };
+
+  // Toggle serie differenziate (Piramidali / Carichi variabili, max 5 serie)
+  const handleToggleSplitSets = (exerciseId) => {
+    setWorkout((prev) => {
+      const days = [...prev.days];
+      const day = days[activeDayIndex];
+      const exercises = day.exercises.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+        const isCurrentlySplit = Array.isArray(ex.setDetails) && ex.setDetails.length > 0;
+        if (isCurrentlySplit) {
+          const first = ex.setDetails[0] || {};
+          return {
+            ...ex,
+            sets: String(ex.setDetails.length),
+            reps: first.reps || ex.reps || '10',
+            weight: first.weight || ex.weight || '',
+            rest: first.rest || ex.rest || '90"',
+            setDetails: null
+          };
+        } else {
+          const count = Math.min(5, Math.max(1, parseInt(ex.sets, 10) || 3));
+          const rows = Array.from({ length: count }, (_, i) => ({
+            setNumber: i + 1,
+            reps: ex.reps || '10',
+            weight: ex.weight || '',
+            rest: ex.rest || '90"'
+          }));
+          return {
+            ...ex,
+            sets: String(count),
+            setDetails: rows
+          };
+        }
+      });
+      days[activeDayIndex] = { ...day, exercises };
+      return { ...prev, days };
+    });
+  };
+
+  const handleUpdateSetDetail = (exerciseId, setIdx, field, value) => {
+    setWorkout((prev) => {
+      const days = [...prev.days];
+      const day = days[activeDayIndex];
+      const exercises = day.exercises.map((ex) => {
+        if (ex.id !== exerciseId || !Array.isArray(ex.setDetails)) return ex;
+        const updatedDetails = ex.setDetails.map((s, idx) =>
+          idx === setIdx ? { ...s, [field]: value } : s
+        );
+        return {
+          ...ex,
+          ...(setIdx === 0 && (field === 'reps' || field === 'weight' || field === 'rest') ? { [field]: value } : {}),
+          setDetails: updatedDetails
+        };
+      });
+      days[activeDayIndex] = { ...day, exercises };
+      return { ...prev, days };
+    });
+  };
+
+  const handleAddSetRow = (exerciseId) => {
+    setWorkout((prev) => {
+      const days = [...prev.days];
+      const day = days[activeDayIndex];
+      const exercises = day.exercises.map((ex) => {
+        if (ex.id !== exerciseId || !Array.isArray(ex.setDetails)) return ex;
+        if (ex.setDetails.length >= 5) return ex;
+        const last = ex.setDetails[ex.setDetails.length - 1] || { reps: '10', weight: '', rest: '90"' };
+        const next = [
+          ...ex.setDetails,
+          {
+            setNumber: ex.setDetails.length + 1,
+            reps: last.reps || '10',
+            weight: last.weight || '',
+            rest: last.rest || '90"'
+          }
+        ];
+        return {
+          ...ex,
+          sets: String(next.length),
+          setDetails: next
+        };
+      });
+      days[activeDayIndex] = { ...day, exercises };
+      return { ...prev, days };
+    });
+  };
+
+  const handleRemoveSetRow = (exerciseId, setIdx) => {
+    setWorkout((prev) => {
+      const days = [...prev.days];
+      const day = days[activeDayIndex];
+      const exercises = day.exercises.map((ex) => {
+        if (ex.id !== exerciseId || !Array.isArray(ex.setDetails)) return ex;
+        if (ex.setDetails.length <= 1) return ex;
+        const next = ex.setDetails
+          .filter((_, idx) => idx !== setIdx)
+          .map((s, idx) => ({ ...s, setNumber: idx + 1 }));
+        return {
+          ...ex,
+          sets: String(next.length),
+          setDetails: next
+        };
       });
       days[activeDayIndex] = { ...day, exercises };
       return { ...prev, days };
@@ -654,156 +761,263 @@ export default function EditorPage() {
                   key={ex.id}
                   className="gl-exercise-card rounded-xl overflow-hidden"
                 >
-                  {/* Riga Principale Esercizio: Header con Titolo, Thumbnail e Azioni */}
-                  <div className="p-3 sm:p-3.5 bg-acc/[0.10] border-b border-line flex items-center justify-between gap-3">
+                  {/* Riga Principale Esercizio: Header con Titolo full-width su mobile, Thumbnail e Azioni */}
+                  <div className="p-3 sm:p-3.5 bg-acc/[0.10] border-b border-line flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
 
-                    {/* Sinistra: #, Thumbnail Statica, Nome Esercizio e Meta */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="font-mono text-xs font-bold text-acc w-6 text-center shrink-0">
-                        #{index + 1}
-                      </span>
+                    {/* Riga superiore su mobile: #, Thumbnail e Azioni | su desktop si distende con sm:contents */}
+                    <div className="flex items-center justify-between gap-2 sm:contents">
+                      <div className="flex items-center gap-2.5 shrink-0 sm:order-1">
+                        <span className="font-mono text-xs font-bold text-acc w-6 text-center shrink-0">
+                          #{index + 1}
+                        </span>
 
-                      {/* Thumbnail statica se disponibile */}
-                      {ex.imageUrl || ex.gifUrl ? (
-                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-sline bg-bg2 shrink-0 overflow-hidden flex items-center justify-center p-0.5">
-                          <img
-                            src={ex.imageUrl || ex.gifUrl}
-                            alt={ex.name}
-                            className="w-full h-full object-contain rounded"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-sline/70 bg-bg2/80 shrink-0 flex items-center justify-center text-dim/60">
-                          <Dumbbell className="w-4 h-4" />
-                        </div>
-                      )}
+                        {/* Thumbnail statica se disponibile */}
+                        {ex.imageUrl || ex.gifUrl ? (
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-sline bg-bg2 shrink-0 overflow-hidden flex items-center justify-center p-0.5">
+                            <img
+                              src={ex.imageUrl || ex.gifUrl}
+                              alt={ex.name}
+                              className="w-full h-full object-contain rounded"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg border border-sline/70 bg-bg2/80 shrink-0 flex items-center justify-center text-dim/60">
+                            <Dumbbell className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
 
-                      {/* Nome Esercizio: Input prominente e leggibile al 100% */}
-                      <div className="flex-1 min-w-0">
-                        <input
-                          type="text"
-                          required
-                          value={ex.name}
-                          onChange={(e) => handleUpdateExercise(ex.id, 'name', e.target.value)}
-                          placeholder="Nome Esercizio (es. Panca Piana Bilanciere)"
-                          className="w-full bg-transparent border-0 border-b border-transparent hover:border-sline focus:border-acc font-dot font-extrabold text-[14px] sm:text-[15px] text-fg focus:outline-none py-0.5 px-1 transition-colors"
-                        />
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          {ex.target && (
-                            <span className="text-[10px] font-mono text-acc/80 uppercase">
-                              {translateTarget(ex.target, lang)}
-                            </span>
-                          )}
-                          {ex.equipment && (
-                            <span className="text-[10px] font-mono text-dim uppercase">
-                              · {translateEquipment(ex.equipment, lang)}
-                            </span>
-                          )}
-                          {ex.gifUrl && (
-                            <span className="gl-tag !text-[8.5px] !py-0.2 !px-1.5 shrink-0">
-                              GIF
-                            </span>
-                          )}
-                          {ex.isCustom && (
-                            <span className="gl-tag !text-[8.5px] !py-0.2 !px-1.5 shrink-0" style={{ '--fc': 'rgb(var(--c-info))' }}>
-                              CUSTOM
-                            </span>
-                          )}
-                        </div>
+                      {/* Destra: Frecce Ordine, Dettaglio & Rimuovi */}
+                      <div className="flex items-center gap-1 shrink-0 sm:order-3">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => handleMoveExercise(index, 'up')}
+                          className="p-1.5 rounded-lg text-dim hover:text-fg hover:bg-sline/40 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                          title="Sposta Su"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={index === currentDay.exercises.length - 1}
+                          onClick={() => handleMoveExercise(index, 'down')}
+                          className="p-1.5 rounded-lg text-dim hover:text-fg hover:bg-sline/40 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                          title="Sposta Giù"
+                        >
+                          <ArrowDown className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
+                          className={`gl-btn !h-7 !px-2.5 !text-[11px] gap-1 ${isExpanded ? '!border-acc !text-acc' : ''}`}
+                          title="Dettagli e Note"
+                        >
+                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          <span className="hidden sm:inline">{isExpanded ? 'Chiudi' : 'Dettagli'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExercise(ex.id)}
+                          className="p-1.5 rounded-lg text-dim hover:text-danger hover:bg-danger/10 transition-colors ml-0.5"
+                          title="Rimuovi Esercizio"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
 
-                    {/* Destra: Frecce Ordine, Dettaglio & Rimuovi */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => handleMoveExercise(index, 'up')}
-                        className="p-1.5 rounded-lg text-dim hover:text-fg hover:bg-sline/40 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
-                        title="Sposta Su"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={index === currentDay.exercises.length - 1}
-                        onClick={() => handleMoveExercise(index, 'down')}
-                        className="p-1.5 rounded-lg text-dim hover:text-fg hover:bg-sline/40 disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
-                        title="Sposta Giù"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
-                        className={`gl-btn !h-7 !px-2.5 !text-[11px] gap-1 ${isExpanded ? '!border-acc !text-acc' : ''}`}
-                        title="Dettagli e Note"
-                      >
-                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        <span className="hidden sm:inline">{isExpanded ? 'Chiudi' : 'Dettagli'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExercise(ex.id)}
-                        className="p-1.5 rounded-lg text-dim hover:text-danger hover:bg-danger/10 transition-colors ml-0.5"
-                        title="Rimuovi Esercizio"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Nome Esercizio: su mobile occupa il 100% della larghezza per evitare ogni troncamento */}
+                    <div className="flex-1 min-w-0 sm:order-2">
+                      <input
+                        type="text"
+                        required
+                        value={ex.name}
+                        onChange={(e) => handleUpdateExercise(ex.id, 'name', e.target.value)}
+                        placeholder="Nome Esercizio (es. Panca Piana Bilanciere)"
+                        className="w-full bg-transparent border-0 border-b border-transparent hover:border-sline focus:border-acc font-dot font-extrabold text-[15px] text-fg focus:outline-none py-0.5 px-1 transition-colors"
+                      />
+                      <div className="flex items-center gap-1.5 mt-0.5 px-1 flex-wrap">
+                        {ex.target && (
+                          <span className="text-[10px] font-mono text-acc/80 uppercase">
+                            {translateTarget(ex.target, lang)}
+                          </span>
+                        )}
+                        {ex.equipment && (
+                          <span className="text-[10px] font-mono text-dim uppercase">
+                            · {translateEquipment(ex.equipment, lang)}
+                          </span>
+                        )}
+                        {ex.gifUrl && (
+                          <span className="gl-tag !text-[8.5px] !py-0.2 !px-1.5 shrink-0">
+                            GIF
+                          </span>
+                        )}
+                        {ex.isCustom && (
+                          <span className="gl-tag !text-[8.5px] !py-0.2 !px-1.5 shrink-0" style={{ '--fc': 'rgb(var(--c-info))' }}>
+                            CUSTOM
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                   </div>
 
-                  {/* Riga Parametri Tecnici: Telemetria Serie, Reps, Peso, Recupero */}
-                  <div className="p-3 sm:px-4 sm:py-2.5 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono">
-                    <div>
-                      <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">SERIE</span>
-                      <input
-                        type="text"
-                        value={ex.sets}
-                        onChange={(e) => handleUpdateExercise(ex.id, 'sets', e.target.value)}
-                        placeholder="4"
-                        className="gl-param-input !text-xs font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">REPS</span>
-                      <input
-                        type="text"
-                        value={ex.reps}
-                        onChange={(e) => handleUpdateExercise(ex.id, 'reps', e.target.value)}
-                        placeholder="8-10"
-                        className="gl-param-input !text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">PESO / CARICO</span>
-                      <input
-                        type="text"
-                        value={ex.weight}
-                        onChange={(e) => handleUpdateExercise(ex.id, 'weight', e.target.value)}
-                        placeholder="70 kg"
-                        className="gl-param-input !text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">RECUPERO</span>
-                      <input
-                        type="text"
-                        value={ex.rest}
-                        onChange={(e) => handleUpdateExercise(ex.id, 'rest', e.target.value)}
-                        placeholder="90&quot;"
-                        className="gl-param-input !text-xs"
-                      />
-                    </div>
+                  {/* Barra Toggle Serie uguali vs Dividi serie (Piramidale max 5 serie) */}
+                  <div className="px-3 sm:px-4 pt-2.5 pb-1 bg-bg2 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-dim uppercase tracking-wider">
+                      {Array.isArray(ex.setDetails) && ex.setDetails.length > 0
+                        ? `${t('lblSplitSetsActive')} (${ex.setDetails.length}/5)`
+                        : t('lblStandardSetsMode')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSplitSets(ex.id)}
+                      className={`gl-btn !h-7 !px-2.5 !text-[10.5px] font-mono gap-1.5 rounded-lg ${
+                        Array.isArray(ex.setDetails) && ex.setDetails.length > 0
+                          ? '!border-acc !bg-acc/15 !text-acc font-bold'
+                          : 'text-dim hover:text-fg'
+                      }`}
+                      title={t('btnSplitSets')}
+                    >
+                      <Layers className="w-3 h-3" />
+                      <span>
+                        {Array.isArray(ex.setDetails) && ex.setDetails.length > 0
+                          ? t('btnUniformSets')
+                          : t('btnSplitSets')}
+                      </span>
+                    </button>
                   </div>
+
+                  {/* Riga Parametri Tecnici: Classica (4 colonne) oppure Divisa per Serie (1..5 righe compatte anche su mobile) */}
+                  {Array.isArray(ex.setDetails) && ex.setDetails.length > 0 ? (
+                    <div className="p-2.5 sm:px-4 sm:py-3 bg-bg2 space-y-1.5 font-mono">
+                      <div className="grid grid-cols-[36px_1fr_1fr_1fr_26px] sm:grid-cols-[54px_1fr_1fr_1fr_32px] gap-1.5 sm:gap-2 items-center text-[9px] sm:text-[9.5px] text-dim uppercase tracking-wider px-0.5">
+                        <span className="text-center sm:text-left">#</span>
+                        <span className="text-center">{t('lblReps')}</span>
+                        <span className="text-center">{t('lblWeight')}</span>
+                        <span className="text-center">{t('lblRest')}</span>
+                        <span />
+                      </div>
+                      {ex.setDetails.map((setRow, sIdx) => (
+                        <div
+                          key={sIdx}
+                          className="grid grid-cols-[36px_1fr_1fr_1fr_26px] sm:grid-cols-[54px_1fr_1fr_1fr_32px] gap-1.5 sm:gap-2 items-center"
+                        >
+                          <span className="inline-flex items-center justify-center w-8 sm:w-11 h-8 rounded-lg bg-acc/15 border border-acc/30 text-acc font-bold text-[11px] sm:text-xs">
+                            S{sIdx + 1}
+                          </span>
+
+                          <input
+                            type="text"
+                            value={setRow.reps}
+                            onChange={(e) => handleUpdateSetDetail(ex.id, sIdx, 'reps', e.target.value)}
+                            placeholder="8-10"
+                            aria-label={`${t('lblReps')} S${sIdx + 1}`}
+                            className="gl-param-input !h-8 !px-1.5 !text-xs text-center min-w-0 w-full"
+                          />
+
+                          <input
+                            type="text"
+                            value={setRow.weight}
+                            onChange={(e) => handleUpdateSetDetail(ex.id, sIdx, 'weight', e.target.value)}
+                            placeholder="70 kg"
+                            aria-label={`${t('lblWeight')} S${sIdx + 1}`}
+                            className="gl-param-input !h-8 !px-1.5 !text-xs text-center min-w-0 w-full"
+                          />
+
+                          <input
+                            type="text"
+                            value={setRow.rest}
+                            onChange={(e) => handleUpdateSetDetail(ex.id, sIdx, 'rest', e.target.value)}
+                            placeholder="90&quot;"
+                            aria-label={`${t('lblRest')} S${sIdx + 1}`}
+                            className="gl-param-input !h-8 !px-1.5 !text-xs text-center min-w-0 w-full"
+                          />
+
+                          <div className="flex justify-center">
+                            {ex.setDetails.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSetRow(ex.id, sIdx)}
+                                className="p-1 rounded text-dim hover:text-danger hover:bg-danger/10 transition-colors"
+                                title={t('btnRemoveSet')}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="pt-1 flex items-center justify-between">
+                        {ex.setDetails.length < 5 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAddSetRow(ex.id)}
+                            className="gl-btn !h-7 !px-3 !text-[11px] font-mono text-acc hover:!border-acc inline-flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>{t('btnAddSetRow')}</span>
+                          </button>
+                        ) : (
+                          <span className="text-[10.5px] font-mono text-dim">
+                            {t('lblMaxSetsReached')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 sm:px-4 sm:py-2.5 bg-bg2 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 font-mono">
+                      <div>
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">SERIE</span>
+                        <input
+                          type="text"
+                          value={ex.sets}
+                          onChange={(e) => handleUpdateExercise(ex.id, 'sets', e.target.value)}
+                          placeholder="4"
+                          className="gl-param-input !text-xs font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">REPS</span>
+                        <input
+                          type="text"
+                          value={ex.reps}
+                          onChange={(e) => handleUpdateExercise(ex.id, 'reps', e.target.value)}
+                          placeholder="8-10"
+                          className="gl-param-input !text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">PESO / CARICO</span>
+                        <input
+                          type="text"
+                          value={ex.weight}
+                          onChange={(e) => handleUpdateExercise(ex.id, 'weight', e.target.value)}
+                          placeholder="70 kg"
+                          className="gl-param-input !text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="block text-[9.5px] text-dim uppercase tracking-wider mb-1">RECUPERO</span>
+                        <input
+                          type="text"
+                          value={ex.rest}
+                          onChange={(e) => handleUpdateExercise(ex.id, 'rest', e.target.value)}
+                          placeholder="90&quot;"
+                          className="gl-param-input !text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Sezione Espandibile: Note PT, Descrizione & Gestione GIF */}
                   {isExpanded && (

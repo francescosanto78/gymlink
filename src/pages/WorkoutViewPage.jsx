@@ -1007,7 +1007,7 @@ export default function WorkoutViewPage() {
                     <div className="min-w-0 flex-1">
                       <h3 className={`font-dot font-black text-[15px] sm:text-[18px] leading-snug tracking-wide text-fg break-words ${isCompleted ? 'line-through text-dim' : ''
                         }`}>
-                        {getExerciseDisplayName(ex.name, lang)}
+                        {getExerciseDisplayName(ex, lang)}
                       </h3>
 
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">

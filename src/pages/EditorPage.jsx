@@ -159,7 +159,7 @@ export default function EditorPage() {
         if (!Array.isArray(day.exercises)) return day;
         const updatedExercises = day.exercises.map((ex) => {
           if (!ex.isCustom && ex.name) {
-            const translatedName = getExerciseDisplayName(ex.name, lang);
+            const translatedName = getExerciseDisplayName(ex, lang);
             const translatedTarget = translateTarget(ex.target, lang);
             const translatedEquip = translateEquipment(ex.equipment, lang);
             const translatedDesc = getExerciseDescription(ex, lang);

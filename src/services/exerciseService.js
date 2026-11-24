@@ -517,16 +517,235 @@ const COMMON_EXERCISE_TRANSLATIONS = {
   }
 };
 
+// Traduttore composizionale leggero (IT / ES) per i 1300+ esercizi del dataset inglese
+const COMP_EQUIPMENT = [
+  ['ez barbell', { it: 'con Bilanciere EZ', es: 'con Barra Z' }],
+  ['trap bar', { it: 'con Trap Bar', es: 'con Barra Hexagonal' }],
+  ['smith', { it: 'al Multipower', es: 'en Máquina Smith' }],
+  ['leverage', { it: 'al Macchinario', es: 'en Máquina' }],
+  ['lever', { it: 'al Macchinario', es: 'en Máquina' }],
+  ['barbell', { it: 'con Bilanciere', es: 'con Barra' }],
+  ['dumbbell', { it: 'con Manubri', es: 'con Mancuernas' }],
+  ['cable', { it: 'ai Cavi', es: 'en Polea' }],
+  ['resistance band', { it: 'con Elastico', es: 'con Banda Elástica' }],
+  ['band', { it: 'con Elastico', es: 'con Banda' }],
+  ['kettlebell', { it: 'con Kettlebell', es: 'con Pesa Rusa' }],
+  ['medicine ball', { it: 'con Palla Medica', es: 'con Balón Medicinal' }],
+  ['stability ball', { it: 'su Fitball', es: 'en Fitball' }],
+  ['exercise ball', { it: 'su Fitball', es: 'en Fitball' }],
+  ['suspension', { it: 'in Sospensione (TRX)', es: 'en Suspensión' }],
+  ['weighted', { it: 'con Zavorra', es: 'con Lastre' }],
+  ['bodyweight', { it: 'a Corpo Libero', es: 'con Peso Corporal' }],
+  ['body weight', { it: 'a Corpo Libero', es: 'con Peso Corporal' }],
+  ['assisted', { it: 'Assistito', es: 'Asistido' }],
+  ['sled', { it: 'alla Slitta / Macchina', es: 'en Prensa / Trineo' }],
+  ['machine', { it: 'al Macchinario', es: 'en Máquina' }],
+  ['rope', { it: 'con Corda', es: 'con Cuerda' }]
+];
+
+const COMP_MODIFIERS = [
+  ['bent over', { it: 'a Busto Flesso', es: 'Inclinado' }],
+  ['bent-over', { it: 'a Busto Flesso', es: 'Inclinado' }],
+  ['chest supported', { it: 'con Appoggio Petto', es: 'con Apoyo en Pecho' }],
+  ['straight arm', { it: 'a Braccia Tese', es: 'con Brazos Rectos' }],
+  ['single arm', { it: 'a Un Braccio', es: 'a Un Brazo' }],
+  ['single-arm', { it: 'a Un Braccio', es: 'a Un Brazo' }],
+  ['one arm', { it: 'a Un Braccio', es: 'a Un Brazo' }],
+  ['one-arm', { it: 'a Un Braccio', es: 'a Un Brazo' }],
+  ['single leg', { it: 'a Una Gamba', es: 'a Una Pierna' }],
+  ['single-leg', { it: 'a Una Gamba', es: 'a Una Pierna' }],
+  ['one leg', { it: 'a Una Gamba', es: 'a Una Pierna' }],
+  ['alternating', { it: 'Alternato', es: 'Alterno' }],
+  ['alternate', { it: 'Alternato', es: 'Alterno' }],
+  ['wide grip', { it: 'Presa Larga', es: 'Agarre Ancho' }],
+  ['wide-grip', { it: 'Presa Larga', es: 'Agarre Ancho' }],
+  ['close grip', { it: 'Presa Stretta', es: 'Agarre Estrecho' }],
+  ['close-grip', { it: 'Presa Stretta', es: 'Agarre Estrecho' }],
+  ['narrow grip', { it: 'Presa Stretta', es: 'Agarre Estrecho' }],
+  ['neutral grip', { it: 'Presa Neutra', es: 'Agarre Neutro' }],
+  ['underhand', { it: 'Presa Supina', es: 'Agarre Supino' }],
+  ['overhand', { it: 'Presa Prona', es: 'Agarre Prono' }],
+  ['reverse', { it: 'Inverso', es: 'Inverso' }],
+  ['seated', { it: 'da Seduto', es: 'Sentado' }],
+  ['standing', { it: 'in Piedi', es: 'de Pie' }],
+  ['lying', { it: 'Sdraiato', es: 'Tumbado' }],
+  ['kneeling', { it: 'in Ginocchio', es: 'de Rodillas' }],
+  ['incline', { it: 'su Panca Inclinata', es: 'Inclinado' }],
+  ['decline', { it: 'su Panca Declinata', es: 'Declinado' }],
+  ['overhead', { it: 'Sopra la Testa', es: 'Sobre la Cabeza' }],
+  ['hanging', { it: 'alla Sbarra', es: 'Colgado' }],
+  ['preacher', { it: 'alla Panca Scott', es: 'en Banco Scott' }],
+  ['concentration', { it: 'Concentrato', es: 'Concentrado' }],
+  ['bulgarian', { it: 'Bulgaro', es: 'Búlgaro' }],
+  ['romanian', { it: 'Rumeno', es: 'Rumano' }],
+  ['sumo', { it: 'Sumo', es: 'Sumo' }],
+  ['rear', { it: 'Posteriori', es: 'Posteriores' }],
+  ['side', { it: 'Laterale', es: 'Lateral' }],
+  ['front', { it: 'Frontale', es: 'Frontal' }]
+];
+
+const COMP_MOVEMENTS = [
+  ['incline bench press', { it: 'Panca Inclinata', es: 'Press Inclinado' }],
+  ['decline bench press', { it: 'Panca Declinata', es: 'Press Declinado' }],
+  ['bench press', { it: 'Panca Piana', es: 'Press de Banca' }],
+  ['chest press', { it: 'Chest Press', es: 'Press de Pecho' }],
+  ['shoulder press', { it: 'Spinte Spalle', es: 'Press de Hombros' }],
+  ['military press', { it: 'Military Press', es: 'Press Militar' }],
+  ['overhead press', { it: 'Lento Sopra la Testa', es: 'Press Militar' }],
+  ['leg press', { it: 'Leg Press', es: 'Prensa de Piernas' }],
+  ['chest fly', { it: 'Croci Pettorali', es: 'Aperturas de Pecho' }],
+  ['flyes', { it: 'Croci', es: 'Aperturas' }],
+  ['fly', { it: 'Croci', es: 'Aperturas' }],
+  ['crossover', { it: 'Croci ai Cavi', es: 'Cruces en Polea' }],
+  ['pullover', { it: 'Pullover', es: 'Pullover' }],
+  ['upright row', { it: 'Tirate al Mento', es: 'Remo al Mentón' }],
+  ['lat pulldown', { it: 'Lat Machine', es: 'Jalón al Pecho' }],
+  ['pulldown', { it: 'Pulldown / Lat Machine', es: 'Jalón' }],
+  ['pull-up', { it: 'Trazioni alla Sbarra', es: 'Dominadas' }],
+  ['pull up', { it: 'Trazioni alla Sbarra', es: 'Dominadas' }],
+  ['chin-up', { it: 'Trazioni Presa Supina', es: 'Dominadas Supinas' }],
+  ['chin up', { it: 'Trazioni Presa Supina', es: 'Dominadas Supinas' }],
+  ['face pull', { it: 'Face Pull', es: 'Face Pull' }],
+  ['row', { it: 'Rematore', es: 'Remo' }],
+  ['hammer curl', { it: 'Curl a Martello', es: 'Curl Martillo' }],
+  ['bicep curl', { it: 'Curl Bicipiti', es: 'Curl de Bíceps' }],
+  ['biceps curl', { it: 'Curl Bicipiti', es: 'Curl de Bíceps' }],
+  ['curl', { it: 'Curl', es: 'Curl' }],
+  ['skullcrusher', { it: 'French Press', es: 'Press Francés' }],
+  ['skull crusher', { it: 'French Press', es: 'Press Francés' }],
+  ['triceps extension', { it: 'Estensioni Tricipiti', es: 'Extensión de Tríceps' }],
+  ['tricep extension', { it: 'Estensioni Tricipiti', es: 'Extensión de Tríceps' }],
+  ['pushdown', { it: 'Pushdown Tricipiti', es: 'Extensión en Polea' }],
+  ['kickback', { it: 'Kickback', es: 'Patada' }],
+  ['lateral raise', { it: 'Alzate Laterali', es: 'Elevaciones Laterales' }],
+  ['front raise', { it: 'Alzate Frontali', es: 'Elevaciones Frontales' }],
+  ['calf raise', { it: 'Calf (Polpacci)', es: 'Elevación de Gemelos' }],
+  ['leg raise', { it: 'Sollevamento Gambe', es: 'Elevación de Piernas' }],
+  ['knee raise', { it: 'Sollevamento Ginocchia', es: 'Elevación de Rodillas' }],
+  ['raise', { it: 'Alzate', es: 'Elevaciones' }],
+  ['leg extension', { it: 'Leg Extension', es: 'Extensión de Cuádriceps' }],
+  ['leg curl', { it: 'Leg Curl', es: 'Curl Femoral' }],
+  ['back extension', { it: 'Iperestensioni Lombari', es: 'Hiperextensiones' }],
+  ['hyperextension', { it: 'Iperestensioni Lombari', es: 'Hiperextensiones' }],
+  ['extension', { it: 'Estensioni', es: 'Extensiones' }],
+  ['hack squat', { it: 'Hack Squat', es: 'Sentadilla Hack' }],
+  ['split squat', { it: 'Squat Bulgaro', es: 'Sentadilla Búlgara' }],
+  ['front squat', { it: 'Front Squat', es: 'Sentadilla Frontal' }],
+  ['squat', { it: 'Squat', es: 'Sentadilla' }],
+  ['lunge', { it: 'Affondi', es: 'Zancadas' }],
+  ['step-up', { it: 'Step-up', es: 'Subidas al Cajón' }],
+  ['step up', { it: 'Step-up', es: 'Subidas al Cajón' }],
+  ['deadlift', { it: 'Stacco da Terra', es: 'Peso Muerto' }],
+  ['hip thrust', { it: 'Hip Thrust', es: 'Hip Thrust' }],
+  ['glute bridge', { it: 'Ponte Glutei', es: 'Puente de Glúteos' }],
+  ['good morning', { it: 'Good Morning', es: 'Buenos Días' }],
+  ['crunch', { it: 'Crunch Addominali', es: 'Crunch Abdominal' }],
+  ['sit-up', { it: 'Sit-up Addominali', es: 'Sit-up Abdominales' }],
+  ['sit up', { it: 'Sit-up Addominali', es: 'Sit-up Abdominales' }],
+  ['side plank', { it: 'Plank Laterale', es: 'Plancha Lateral' }],
+  ['plank', { it: 'Plank Addominale', es: 'Plancha Abdominal' }],
+  ['russian twist', { it: 'Russian Twist', es: 'Giros Rusos' }],
+  ['shrug', { it: 'Scrollate (Shrug)', es: 'Encogimientos' }],
+  ['chest dip', { it: 'Dip Pettorali', es: 'Fondos Pectoral' }],
+  ['dips', { it: 'Dip alle Parallele', es: 'Fondos en Paralelas' }],
+  ['dip', { it: 'Dip', es: 'Fondos' }],
+  ['push-up', { it: 'Piegamenti sulle Braccia', es: 'Flexiones' }],
+  ['push up', { it: 'Piegamenti sulle Braccia', es: 'Flexiones' }],
+  ['abduction', { it: 'Abduzioni', es: 'Abducciones' }],
+  ['adduction', { it: 'Adduzioni', es: 'Aducciones' }],
+  ['press', { it: 'Spinte', es: 'Press' }]
+];
+
+function translateExerciseNameCompositional(rawName, lang) {
+  if (lang !== 'it' && lang !== 'es') return null;
+  let working = ` ${rawName.toLowerCase().trim()} `;
+
+  // 1. Estrai movimento base (più specifico possibile, in ordine)
+  let movementOut = '';
+  for (const [eng, trans] of COMP_MOVEMENTS) {
+    const escaped = eng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
+    if (re.test(working)) {
+      movementOut = trans[lang];
+      working = working.replace(re, ' ');
+      break;
+    }
+  }
+  if (!movementOut) return null;
+
+  // 2. Estrai attrezzatura
+  const equipOut = [];
+  for (const [eng, trans] of COMP_EQUIPMENT) {
+    const escaped = eng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
+    if (re.test(working)) {
+      equipOut.push(trans[lang]);
+      working = working.replace(re, ' ');
+      break;
+    }
+  }
+
+  // 3. Estrai modificatori posturali/presa (max 2 per chiarezza)
+  const modOut = [];
+  for (const [eng, trans] of COMP_MODIFIERS) {
+    const escaped = eng.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(^|\\s)${escaped}(\\s|$)`, 'i');
+    if (re.test(working)) {
+      // Evita ridondanze (es. Panca Inclinata + su Panca Inclinata)
+      if (!movementOut.toLowerCase().includes(trans[lang].toLowerCase())) {
+        modOut.push(trans[lang]);
+      }
+      working = working.replace(re, ' ');
+      if (modOut.length >= 2) break;
+    }
+  }
+
+  const parts = [movementOut, ...modOut, ...equipOut].filter(Boolean);
+  return parts.join(' ');
+}
+
 /**
  * Risolve e restituisce il nome visualizzato dell'esercizio in base alla lingua
+ * (Supporta bidirezionalità IT <-> EN <-> ES e traduzione composizionale leggera)
  */
 export function getExerciseDisplayName(exerciseOrName, lang = 'it') {
   if (!exerciseOrName) return '';
+  if (typeof exerciseOrName === 'object' && exerciseOrName.isCustom) {
+    return (exerciseOrName.name || '').trim();
+  }
   const rawName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name || '';
   if (!rawName) return '';
 
   const trimmed = rawName.trim();
   const lower = trimmed.toLowerCase();
+
+  // Helper per ricerca bidirezionale (esatta poi parziale più lunga) su COMMON_EXERCISE_TRANSLATIONS
+  const lookupBidirectional = (queryLow) => {
+    const entries = Object.entries(COMMON_EXERCISE_TRANSLATIONS);
+    // A) Corrispondenza esatta su chiave EN o sui valori IT/EN/ES
+    for (const [key, trans] of entries) {
+      if (
+        queryLow === key ||
+        queryLow === trans.it?.toLowerCase() ||
+        queryLow === trans.en?.toLowerCase() ||
+        queryLow === trans.es?.toLowerCase()
+      ) {
+        return trans;
+      }
+    }
+    // B) Corrispondenza parziale ordinata dalla chiave più lunga alla più corta
+    const sorted = entries.sort((a, b) => b[0].length - a[0].length);
+    for (const [key, trans] of sorted) {
+      if (
+        queryLow.includes(key) ||
+        (trans.it && queryLow.includes(trans.it.toLowerCase())) ||
+        (trans.es && queryLow.includes(trans.es.toLowerCase()))
+      ) {
+        return trans;
+      }
+    }
+    return null;
+  };
 
   // 1. Se il nome ha formato bilingue "English Name (Nome Italiano)"
   const bilingualMatch = trimmed.match(/^([^(]+)\(([^)]+)\)$/);
@@ -541,27 +760,26 @@ export function getExerciseDisplayName(exerciseOrName, lang = 'it') {
       return itPart;
     }
     if (lang === 'es') {
-      const enKey = enPart.toLowerCase();
-      if (COMMON_EXERCISE_TRANSLATIONS[enKey]?.es) {
-        return COMMON_EXERCISE_TRANSLATIONS[enKey].es;
-      }
-      for (const [key, trans] of Object.entries(COMMON_EXERCISE_TRANSLATIONS)) {
-        if (enKey.includes(key) && trans.es) {
-          return trans.es;
-        }
-      }
-      return enPart;
+      const hit = lookupBidirectional(enPart.toLowerCase());
+      if (hit?.es) return hit.es;
+      const compEs = translateExerciseNameCompositional(enPart, 'es');
+      return compEs || enPart;
     }
   }
 
-  // 2. Controllo dizionario per corrispondenza esatta o parziale
-  for (const [key, trans] of Object.entries(COMMON_EXERCISE_TRANSLATIONS)) {
-    if (lower === key || lower.includes(key)) {
-      if (trans[lang]) return trans[lang];
-    }
+  // 2. Controllo dizionario bidirezionale
+  const dictHit = lookupBidirectional(lower);
+  if (dictHit?.[lang]) {
+    return dictHit[lang];
   }
 
-  // 3. Fallback: capitalizza le parole
+  // 3. Traduzione composizionale leggera per i 1300+ esercizi del dataset inglese
+  const composed = translateExerciseNameCompositional(trimmed, lang);
+  if (composed) {
+    return composed;
+  }
+
+  // 4. Fallback: capitalizza le parole mantenendo i nomi custom intatti
   return trimmed
     .split(' ')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())

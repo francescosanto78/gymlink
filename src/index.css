@@ -559,9 +559,255 @@ html.theme-light .gl-dark-only { display: none !important; }
   .gl-flash {
     animation: gl-flash 1.2s ease-out;
   }
+  .gl-prompt-spotlight {
+    position: relative;
+    overflow: hidden;
+    z-index: 20;
+    transform-origin: center center;
+    animation: gl-prompt-spotlight 1.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .gl-prompt-spotlight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 15%, rgb(var(--c-acc) / 0.42) 50%, transparent 85%);
+    transform: translateX(-120%);
+    animation: gl-shimmer-sweep 1.2s ease-out 0.2s forwards;
+    pointer-events: none;
+  }
+  .gl-countdown-pop {
+    animation: gl-countdown-pop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+  .gl-go-glide {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    animation: gl-go-glide 2.5s linear infinite;
+  }
+  .gl-go-badge {
+    border: 1.5px solid rgb(var(--c-acc));
+    background: rgb(var(--c-acc) / 0.16);
+    color: rgb(var(--c-acc));
+    box-shadow: 0 0 16px -2px var(--glow);
+  }
+  html.theme-light .gl-go-badge {
+    border-color: #16a34a;
+    background: #dcfce7;
+    color: #15803d;
+    box-shadow: 0 0 16px -2px rgba(22, 163, 74, 0.45);
+  }
+  .gl-go-blink {
+    animation: gl-go-blink 0.72s ease-in-out infinite;
+  }
+  .gl-rest-heartbeat-badge {
+    border: 1.5px solid #f97316;
+    background: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    box-shadow: 0 0 14px -2px rgba(249, 115, 22, 0.45);
+  }
+  html.theme-light .gl-rest-heartbeat-badge {
+    border-color: #ea580c;
+    background: #ffedd5;
+    color: #c2410c;
+    box-shadow: 0 0 14px -2px rgba(234, 88, 12, 0.35);
+  }
+  .gl-heartbeat {
+    animation: gl-heartbeat 1.4s ease-in-out infinite;
+  }
+  .gl-chevron-1 {
+    animation: gl-chevron-flow 0.8s ease-in-out infinite;
+  }
+  .gl-chevron-2 {
+    animation: gl-chevron-flow 0.8s ease-in-out 0.18s infinite;
+  }
+  .gl-celebrate-card {
+    position: relative;
+    overflow: hidden;
+    animation: gl-celebrate-card 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both;
+  }
+  .gl-celebrate-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 25%, rgb(var(--c-acc) / 0.22) 50%, transparent 75%);
+    transform: translateX(-130%);
+    animation: gl-shimmer-sweep 1.1s ease-out 0.15s forwards;
+    pointer-events: none;
+  }
+  .gl-celebrate-pop {
+    animation: gl-celebrate-pop 0.72s cubic-bezier(0.22, 1.28, 0.36, 1) both;
+  }
+  .gl-ring-burst {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2.5px solid rgb(var(--c-acc));
+    animation: gl-ring-burst 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    pointer-events: none;
+  }
+  .gl-ring-burst-delay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid rgb(var(--c-acc2));
+    animation: gl-ring-burst 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.16s both;
+    pointer-events: none;
+  }
+  .gl-spark-dot {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 9999px;
+    animation: gl-spark-burst 0.95s cubic-bezier(0.16, 1, 0.3, 1) var(--sd, 0ms) both;
+    pointer-events: none;
+  }
+  .gl-title-slam {
+    animation: gl-title-slam 0.6s cubic-bezier(0.2, 1.1, 0.35, 1) 0.1s both;
+  }
+  .gl-phrase-rise {
+    animation: gl-phrase-rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d, 220ms) both;
+  }
+  .gl-trophy-hero {
+    animation:
+      gl-celebrate-pop 0.8s cubic-bezier(0.22, 1.28, 0.36, 1) both,
+      gl-trophy-float 2.8s ease-in-out 0.85s infinite;
+  }
+  .gl-confetti-piece {
+    position: absolute;
+    top: -12%;
+    border-radius: 2px;
+    animation: gl-confetti-fall var(--cdur, 3.2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) var(--cdel, 0s) infinite;
+    pointer-events: none;
+  }
 }
 
 /* ---------- Keyframes (stessi movimenti della reference) ---------- */
+@keyframes gl-celebrate-card {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(14px);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.015) translateY(0);
+    box-shadow: 0 0 0 2px rgb(var(--c-acc) / 0.8), 0 0 42px -4px var(--glow);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes gl-celebrate-pop {
+  0% { opacity: 0; transform: scale(0.35) rotate(-14deg); }
+  55% { opacity: 1; transform: scale(1.22) rotate(5deg); }
+  78% { transform: scale(0.94) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes gl-ring-burst {
+  0% { opacity: 0.9; transform: scale(0.75); }
+  100% { opacity: 0; transform: scale(2.15); }
+}
+@keyframes gl-spark-burst {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--sx, 0px)), calc(-50% + var(--sy, 0px))) scale(0.25);
+  }
+}
+@keyframes gl-title-slam {
+  0% { opacity: 0; transform: translateY(14px) scale(0.92); }
+  65% { opacity: 1; transform: translateY(-2px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes gl-phrase-rise {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes gl-trophy-float {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 36px -4px var(--glow); }
+  50% { transform: translateY(-5px) scale(1.04); box-shadow: 0 0 48px 0 var(--glow); }
+}
+@keyframes gl-confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cx, 20px), 115vh, 0) rotate(720deg);
+  }
+}
+@keyframes gl-prompt-spotlight {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.94);
+    box-shadow: 0 0 0 0 transparent;
+  }
+  28%, 56% {
+    opacity: 1;
+    transform: scale(1.11);
+    box-shadow: 0 0 0 3px rgb(var(--c-acc)), 0 14px 36px -2px var(--glow);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+@keyframes gl-shimmer-sweep {
+  to { transform: translateX(120%); }
+}
+@keyframes gl-countdown-pop {
+  0% { opacity: 0; transform: scale(0.5); }
+  65% { opacity: 1; transform: scale(1.25); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes gl-go-glide {
+  0% {
+    opacity: 0;
+    left: 0%;
+    transform: translate(0, -50%);
+  }
+  12% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    left: 100%;
+    transform: translate(-100%, -50%);
+  }
+}
+@keyframes gl-go-blink {
+  0%, 100% { opacity: 1; filter: brightness(1.1); }
+  50% { opacity: 0.45; filter: brightness(0.9); }
+}
+@keyframes gl-heartbeat {
+  0% { transform: scale(1); box-shadow: 0 0 10px -2px rgba(249, 115, 22, 0.35); }
+  14% { transform: scale(1.1); box-shadow: 0 0 22px 0 rgba(249, 115, 22, 0.65); }
+  28% { transform: scale(1); box-shadow: 0 0 10px -2px rgba(249, 115, 22, 0.35); }
+  42% { transform: scale(1.07); box-shadow: 0 0 18px 0 rgba(249, 115, 22, 0.55); }
+  70%, 100% { transform: scale(1); box-shadow: 0 0 10px -2px rgba(249, 115, 22, 0.35); }
+}
+@keyframes gl-chevron-flow {
+  0%, 100% { opacity: 0.35; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(3px); }
+}
 @keyframes gl-pgin { from { opacity: 0; transform: translateY(6px); } }
 @keyframes gl-face { from { opacity: 0; transform: translateY(10px); } }
 @keyframes gl-fadein { from { opacity: 0; } }

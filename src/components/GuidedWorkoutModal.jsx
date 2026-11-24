@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Play, Pause, SkipForward, Check, CheckCircle2, Dumbbell, Eye,
-  ChevronDown, ChevronUp, Volume2, Edit3, Trophy, Sparkles, X, ArrowRight,
-  Clock, Flame, RotateCcw
+  ChevronDown, ChevronUp, ChevronRight, Volume2, Edit3, Trophy, Sparkles, X, ArrowRight,
+  Clock, Flame, Timer
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -58,6 +58,47 @@ export function clearSavedGuidedSession(workoutId) {
     // ignore
   }
 }
+
+const SPARK_PARTICLES = [
+  { sx: '0px', sy: '-54px', size: 7, color: 'rgb(var(--c-acc))', delay: '60ms' },
+  { sx: '38px', sy: '-38px', size: 6, color: '#facc15', delay: '90ms' },
+  { sx: '54px', sy: '0px', size: 7, color: 'rgb(var(--c-acc2))', delay: '70ms' },
+  { sx: '38px', sy: '38px', size: 6, color: 'rgb(var(--c-acc))', delay: '120ms' },
+  { sx: '0px', sy: '54px', size: 6, color: '#facc15', delay: '80ms' },
+  { sx: '-38px', sy: '38px', size: 7, color: 'rgb(var(--c-acc2))', delay: '110ms' },
+  { sx: '-54px', sy: '0px', size: 6, color: 'rgb(var(--c-acc))', delay: '70ms' },
+  { sx: '-38px', sy: '-38px', size: 7, color: '#facc15', delay: '100ms' },
+  { sx: '22px', sy: '-48px', size: 5, color: 'rgb(var(--c-acc2))', delay: '130ms' },
+  { sx: '-22px', sy: '-48px', size: 5, color: 'rgb(var(--c-acc))', delay: '140ms' },
+  { sx: '48px', sy: '20px', size: 5, color: '#facc15', delay: '135ms' },
+  { sx: '-48px', sy: '20px', size: 5, color: 'rgb(var(--c-acc2))', delay: '145ms' }
+];
+
+const CONFETTI_PIECES = [
+  { left: '5%', cx: '18px', w: 7, h: 12, color: '#3ee6a0', dur: '2.9s', del: '0s' },
+  { left: '10%', cx: '-22px', w: 6, h: 10, color: '#facc15', dur: '3.4s', del: '0.25s' },
+  { left: '15%', cx: '26px', w: 8, h: 8, color: '#38bdf8', dur: '2.7s', del: '0.1s' },
+  { left: '20%', cx: '-15px', w: 6, h: 12, color: '#fb923c', dur: '3.2s', del: '0.45s' },
+  { left: '25%', cx: '24px', w: 7, h: 11, color: '#3ee6a0', dur: '3.0s', del: '0.18s' },
+  { left: '30%', cx: '-28px', w: 6, h: 9, color: '#a78bfa', dur: '3.5s', del: '0.6s' },
+  { left: '35%', cx: '14px', w: 8, h: 10, color: '#facc15', dur: '2.8s', del: '0.05s' },
+  { left: '40%', cx: '-18px', w: 6, h: 12, color: '#38bdf8', dur: '3.3s', del: '0.35s' },
+  { left: '45%', cx: '22px', w: 7, h: 9, color: '#3ee6a0', dur: '2.9s', del: '0.5s' },
+  { left: '50%', cx: '-20px', w: 8, h: 12, color: '#fb923c', dur: '3.1s', del: '0.12s' },
+  { left: '55%', cx: '26px', w: 6, h: 10, color: '#facc15', dur: '3.4s', del: '0.4s' },
+  { left: '60%', cx: '-16px', w: 7, h: 8, color: '#a78bfa', dur: '2.7s', del: '0.22s' },
+  { left: '65%', cx: '20px', w: 6, h: 12, color: '#3ee6a0', dur: '3.2s', del: '0.55s' },
+  { left: '70%', cx: '-24px', w: 8, h: 10, color: '#38bdf8', dur: '2.85s', del: '0.08s' },
+  { left: '75%', cx: '16px', w: 6, h: 11, color: '#fb923c', dur: '3.45s', del: '0.3s' },
+  { left: '80%', cx: '-22px', w: 7, h: 9, color: '#facc15', dur: '3.0s', del: '0.48s' },
+  { left: '85%', cx: '24px', w: 8, h: 12, color: '#3ee6a0', dur: '2.75s', del: '0.15s' },
+  { left: '90%', cx: '-18px', w: 6, h: 10, color: '#38bdf8', dur: '3.35s', del: '0.42s' },
+  { left: '95%', cx: '14px', w: 7, h: 11, color: '#a78bfa', dur: '2.95s', del: '0.2s' },
+  { left: '12%', cx: '20px', w: 6, h: 8, color: '#fb923c', dur: '3.15s', del: '0.9s' },
+  { left: '38%', cx: '-20px', w: 7, h: 11, color: '#3ee6a0', dur: '3.25s', del: '0.85s' },
+  { left: '62%', cx: '22px', w: 6, h: 9, color: '#facc15', dur: '2.9s', del: '0.75s' },
+  { left: '82%', cx: '-16px', w: 7, h: 12, color: '#fb923c', dur: '3.1s', del: '0.95s' }
+];
 
 function parseRestSeconds(restStr) {
   if (!restStr) return 60;
@@ -116,14 +157,26 @@ export default function GuidedWorkoutModal({
   const [encouragementData, setEncouragementData] = useState({ heading: '', phrase: '' });
   const usedEncouragementsRef = useRef(new Set());
 
-  // Statistiche sessione + eventuale sessione salvata rilevata nello screen select_day
+  // Statistiche sessione + cronometro attivo (in pausa durante recupero / tra esercizi)
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [sessionEndTime, setSessionEndTime] = useState(null);
+  const [activeElapsedMs, setActiveElapsedMs] = useState(0);
+  const activeSegmentStartRef = useRef(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [goIntroStep, setGoIntroStep] = useState(3);
   const [completedSetsCount, setCompletedSetsCount] = useState(0);
   const [localSavedInPicker, setLocalSavedInPicker] = useState(null);
 
   const wakeLockRef = useRef(null);
   const completeFnRef = useRef(null);
+
+  const commitActiveSegment = () => {
+    if (activeSegmentStartRef.current !== null) {
+      const delta = Math.max(0, Date.now() - activeSegmentStartRef.current);
+      activeSegmentStartRef.current = null;
+      setActiveElapsedMs((prev) => prev + delta);
+    }
+  };
 
   const applySavedSession = (saved) => {
     if (!saved) return;
@@ -142,6 +195,8 @@ export default function GuidedWorkoutModal({
     setIsEditingWeight(false);
     setSessionStartTime(saved.sessionStartTime || Date.now());
     setSessionEndTime(null);
+    setActiveElapsedMs(saved.activeElapsedMs || 0);
+    activeSegmentStartRef.current = null;
     setCompletedSetsCount(saved.completedSetsCount || 0);
     setTimerInitial(saved.timerInitial || 60);
 
@@ -163,6 +218,7 @@ export default function GuidedWorkoutModal({
 
         if (safeSetIdx + 1 < rTotalSets) {
           setSetIdx(safeSetIdx + 1);
+          activeSegmentStartRef.current = Date.now();
           setPhase('exercise');
         } else {
           onMarkExerciseCompleted?.(rEx.id);
@@ -196,6 +252,9 @@ export default function GuidedWorkoutModal({
       setEncouragementData(saved.encouragementData);
       setPhase('encouragement');
     } else {
+      if (!saved.timerPaused) {
+        activeSegmentStartRef.current = Date.now();
+      }
       setPhase('exercise');
     }
   };
@@ -220,6 +279,8 @@ export default function GuidedWorkoutModal({
       endTimeRef.current = null;
       setSessionStartTime(null);
       setSessionEndTime(null);
+      setActiveElapsedMs(0);
+      activeSegmentStartRef.current = null;
       setCompletedSetsCount(0);
       setLocalSavedInPicker(loadSavedGuidedSession(workout?.id));
     }
@@ -244,6 +305,7 @@ export default function GuidedWorkoutModal({
           timerPaused,
           timerRemainingWhenPaused: timerPaused ? timerSeconds : null,
           sessionStartTime,
+          activeElapsedMs,
           completedSetsCount,
           updatedAt: Date.now()
         };
@@ -267,6 +329,7 @@ export default function GuidedWorkoutModal({
     timerPaused,
     timerSeconds !== null,
     sessionStartTime,
+    activeElapsedMs,
     completedSetsCount
   ]);
 
@@ -378,10 +441,15 @@ export default function GuidedWorkoutModal({
 
     if (!isLastSetOfExercise) {
       setSetIdx((prev) => prev + 1);
+      // Riprende il cronometro attivo dopo il recupero (se fermo)
+      if (activeSegmentStartRef.current === null) {
+        activeSegmentStartRef.current = Date.now();
+      }
       return;
     }
 
-    // Fine di tutte le serie dell'esercizio corrente: smarca esercizio sulla scheda
+    // Fine di tutte le serie dell'esercizio corrente: ferma temporaneamente il cronometro attivo
+    commitActiveSegment();
     onMarkExerciseCompleted?.(currentEx.id);
 
     if (!isLastExerciseOfDay) {
@@ -396,6 +464,48 @@ export default function GuidedWorkoutModal({
   };
 
   completeFnRef.current = completeCurrentSetAndAdvance;
+
+  // Cronometro totale di attività effettiva (scorre durante l'esecuzione, si ferma durante il recupero e riparte dopo)
+  useEffect(() => {
+    if (!isOpen || !sessionStartTime) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const isActivelyExercising = phase === 'exercise' && timerSeconds === null;
+    if (!isActivelyExercising) {
+      setElapsedSeconds(Math.max(0, Math.floor(activeElapsedMs / 1000)));
+      return;
+    }
+
+    const tick = () => {
+      const currentSeg = activeSegmentStartRef.current !== null
+        ? Math.max(0, Date.now() - activeSegmentStartRef.current)
+        : 0;
+      setElapsedSeconds(Math.max(0, Math.floor((activeElapsedMs + currentSeg) / 1000)));
+    };
+    tick();
+    const idInterval = setInterval(tick, 500);
+    return () => clearInterval(idInterval);
+  }, [isOpen, phase, timerSeconds !== null, sessionStartTime, activeElapsedMs]);
+
+  // Sequenza coreografata all'inizio di ogni serie attiva:
+  // 1) Prima animazione grande+luce sull'istruzione (0..1700ms)
+  // 2) Poi parte countdown 3 -> 2 -> 1 più grande
+  // 3) Poi badge GO! lampeggiante che scorre da sinistra verso destra
+  useEffect(() => {
+    if (!isOpen || phase !== 'exercise' || timerSeconds !== null) return;
+    setGoIntroStep('prompt');
+    const t0 = setTimeout(() => setGoIntroStep(3), 1700);
+    const t1 = setTimeout(() => setGoIntroStep(2), 2350);
+    const t2 = setTimeout(() => setGoIntroStep(1), 3000);
+    const t3 = setTimeout(() => setGoIntroStep('go'), 3650);
+    return () => {
+      clearTimeout(t0);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isOpen, phase, exIdx, setIdx, timerSeconds !== null]);
 
   // Loop countdown basato su timestamp reale
   useEffect(() => {
@@ -428,12 +538,17 @@ export default function GuidedWorkoutModal({
     setTimerSeconds(null);
     setTimerPaused(false);
     endTimeRef.current = null;
-    setSessionStartTime(Date.now());
+    const now = Date.now();
+    setSessionStartTime(now);
+    setActiveElapsedMs(0);
+    activeSegmentStartRef.current = now;
     setCompletedSetsCount(0);
     setPhase('exercise');
   };
 
   const handleStartRest = () => {
+    // Ferma il cronometro attivo durante il recupero
+    commitActiveSegment();
     const secs = parseRestSeconds(activeSetInfo.rest);
     setTimerInitial(secs);
     setTimerSeconds(secs);
@@ -470,10 +585,12 @@ export default function GuidedWorkoutModal({
     setSetIdx(0);
     setShowDetails(false);
     setIsEditingWeight(false);
+    activeSegmentStartRef.current = Date.now();
     setPhase('exercise');
   };
 
   const handleFinishWorkoutDirect = () => {
+    commitActiveSegment();
     if (currentEx) {
       onMarkSetCompleted?.(currentEx.id, setIdx);
       onMarkExerciseCompleted?.(currentEx.id);
@@ -488,11 +605,20 @@ export default function GuidedWorkoutModal({
 
   if (!isOpen) return null;
 
+  const formatDurationClock = (totalSecs) => {
+    const safe = Math.max(0, Math.floor(totalSecs || 0));
+    const hrs = Math.floor(safe / 3600);
+    const mins = Math.floor((safe % 3600) / 60);
+    const secs = safe % 60;
+    if (hrs > 0) {
+      return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   const formatElapsed = () => {
     if (!sessionStartTime) return '—';
-    const end = sessionEndTime || Date.now();
-    const totalMins = Math.max(1, Math.round((end - sessionStartTime) / 60000));
-    return `${totalMins} min`;
+    return formatDurationClock(Math.floor(activeElapsedMs / 1000));
   };
 
   const staticImg = currentEx ? (currentEx.imageUrl || getExerciseImageUrl(currentEx.image)) : null;
@@ -535,7 +661,7 @@ export default function GuidedWorkoutModal({
       </header>
 
       {/* Corpo centrale */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-5 sm:py-8 flex flex-col justify-center">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-5 sm:py-8 flex flex-col justify-center overflow-x-hidden">
 
         {/* ---------- FASE 1: SCELTA GIORNATA ---------- */}
         {phase === 'select_day' && (
@@ -631,27 +757,78 @@ export default function GuidedWorkoutModal({
         {/* ---------- FASE 2: ESERCIZIO CORRENTE & TIMER ZOOMATO ---------- */}
         {phase === 'exercise' && currentEx && (
           <div className="space-y-4 sm:space-y-5 gl-page-in">
-            {/* Progresso pesato sulle serie totali della giornata */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-mono gap-2">
-                <span className="text-acc font-bold uppercase tracking-wider">
-                  {t('exerciseSingular')} {exIdx + 1} {t('lblOf')} {exercises.length}
-                </span>
-                <span className="text-dim">
-                  {setsCompletedProgress}/{totalSetsInDay} {t('lblSets').toLowerCase()} · <strong className="text-acc">{guidedProgressPercent}%</strong>
-                </span>
+            {/* Fascia Alta Raddoppiata: Cronometro Totale + Track Animato 3, 2, 1 -> GO! »» / RECUPERO arancione pulsante + Barra Progresso */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 px-4 py-3.5 min-h-[68px] sm:min-h-[76px] rounded-2xl border border-sline bg-bg2/95 shadow-sm">
+                <div className="flex items-center gap-2.5 font-mono shrink-0 pr-2 border-r border-sline/70">
+                  <Timer className="w-6 h-6 sm:w-7 sm:h-7 text-acc shrink-0" />
+                  <div className="leading-none">
+                    <span className="text-[9.5px] sm:text-[10px] text-dim uppercase tracking-wider block mb-0.5">
+                      {t('guidedDurationLabel')}
+                    </span>
+                    <span className="font-black text-2xl sm:text-3xl text-fg tabular-nums">
+                      {formatDurationClock(elapsedSeconds)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Pista orizzontale: overflow-hidden solo durante lo scorrimento GO!, overflow-visible per il battito RECUPERO */}
+                <div className={`flex-1 relative h-11 sm:h-12 flex items-center justify-end ${
+                  timerSeconds === null && goIntroStep === 'go' ? 'overflow-hidden' : 'overflow-visible pr-1.5'
+                }`}>
+                  {timerSeconds !== null ? (
+                    <span className="gl-rest-heartbeat-badge gl-heartbeat inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-mono text-xs sm:text-sm font-black uppercase tracking-wider">
+                      <Clock className="w-4 h-4 shrink-0" />
+                      <span>{t('lblRest')}</span>
+                    </span>
+                  ) : goIntroStep === 'prompt' ? (
+                    <span className="text-[11px] font-mono text-dim/70 uppercase tracking-widest animate-pulse">
+                      ···
+                    </span>
+                  ) : goIntroStep !== 'go' ? (
+                    <div className="w-full flex items-center justify-center">
+                      <span
+                        key={`cd_${exIdx}_${setIdx}_${goIntroStep}`}
+                        className="gl-countdown-pop gl-go-badge inline-flex items-center justify-center min-w-[76px] px-5 py-1.5 rounded-xl font-dot font-black text-2xl sm:text-3xl leading-none tracking-wider"
+                      >
+                        {goIntroStep}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="gl-go-glide">
+                      <span className="gl-go-badge gl-go-blink inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl font-dot font-black text-sm sm:text-base tracking-widest uppercase whitespace-nowrap">
+                        <span>GO!</span>
+                        <span className="inline-flex items-center">
+                          <ChevronRight className="w-4 h-4 gl-chevron-1" strokeWidth={3} />
+                          <ChevronRight className="w-4 h-4 -ml-2.5 gl-chevron-2" strokeWidth={3} />
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="h-2.5 rounded-full bg-bg2 border border-sline overflow-hidden">
-                <div
-                  className="h-full bg-acc transition-all duration-300"
-                  style={{ width: `${guidedProgressPercent}%` }}
-                />
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs sm:text-sm font-mono gap-2">
+                  <span className="text-acc font-bold uppercase tracking-wider">
+                    {t('exerciseSingular')} {exIdx + 1} {t('lblOf')} {exercises.length}
+                  </span>
+                  <span className="text-dim">
+                    {setsCompletedProgress}/{totalSetsInDay} {t('lblSets').toLowerCase()} · <strong className="text-acc text-sm sm:text-base">{guidedProgressPercent}%</strong>
+                  </span>
+                </div>
+                <div className="h-5 sm:h-6 rounded-full bg-bg2 border border-sline overflow-hidden shadow-inner">
+                  <div
+                    className="h-full bg-acc transition-all duration-300"
+                    style={{ width: `${guidedProgressPercent}%` }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Card Esercizio Focus */}
-            <div className="gl-card rounded-2xl overflow-hidden">
-              <div className="p-4 bg-acc/[0.08] border-b border-line flex items-start gap-3.5">
+            {/* Card Esercizio Focus (overflow-visible per consentire il grande zoom iniziale dell'istruzione) */}
+            <div className="gl-card rounded-2xl !overflow-visible">
+              <div className="p-4 bg-acc/[0.08] border-b border-line rounded-t-2xl flex items-start gap-3.5">
                 <div
                   onClick={() => setShowDetails(!showDetails)}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl border border-sline bg-bg shrink-0 overflow-hidden cursor-pointer hover:border-acc flex items-center justify-center p-1"
@@ -669,7 +846,7 @@ export default function GuidedWorkoutModal({
 
                 <div className="flex-1 min-w-0">
                   <h2 className="font-dot font-black text-lg sm:text-2xl text-fg leading-snug break-words">
-                    {getExerciseDisplayName(currentEx.name, lang)}
+                    {getExerciseDisplayName(currentEx, lang)}
                   </h2>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {currentEx.target && (
@@ -741,7 +918,7 @@ export default function GuidedWorkoutModal({
 
               {/* Corpo Centrale: O Timer Zoomato oppure Parametri Serie Attiva */}
               {timerSeconds !== null ? (
-                <div className="p-6 sm:p-8 bg-bg2 text-center space-y-5 gl-page-in">
+                <div className="p-6 sm:p-8 bg-bg2 rounded-b-2xl text-center space-y-5 gl-page-in">
                   <div className="space-y-1">
                     <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest text-acc font-bold">
                       <Clock className="w-4 h-4" />
@@ -805,9 +982,12 @@ export default function GuidedWorkoutModal({
                   </div>
                 </div>
               ) : (
-                <div className="p-4 sm:p-5 bg-bg2 space-y-4">
-                  {/* Banner Guida Chiaro */}
-                  <div className="p-3.5 rounded-xl border border-acc/40 bg-acc/10 flex items-center gap-3">
+                <div className="p-4 sm:p-5 bg-bg2 rounded-b-2xl space-y-4">
+                  {/* Banner Guida Chiaro con animazione luce + movimento all'avvio della serie */}
+                  <div
+                    key={`prompt_${exIdx}_${setIdx}`}
+                    className="gl-prompt-spotlight p-3.5 rounded-xl border border-acc/50 bg-acc/10 flex items-center gap-3"
+                  >
                     <Flame className="w-5 h-5 text-acc shrink-0" />
                     <p className="text-xs sm:text-sm font-mono font-bold text-fg leading-relaxed">
                       {isLastSetOfWorkout
@@ -945,32 +1125,64 @@ export default function GuidedWorkoutModal({
           </div>
         )}
 
-        {/* ---------- FASE 3: INCORAGGIAMENTO TRA UN ESERCIZIO E L'ALTRO ---------- */}
+        {/* ---------- FASE 3: INCORAGGIAMENTO ANIMATO TRA UN ESERCIZIO E L'ALTRO ---------- */}
         {phase === 'encouragement' && (
-          <div className="gl-card p-6 sm:p-8 text-center space-y-5 gl-rise">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-acc/15 border border-acc/50 grid place-items-center text-acc shadow-[0_0_30px_-6px_var(--glow)]">
-              <CheckCircle2 className="w-9 h-9" />
+          <div
+            key={`enc_${exIdx}`}
+            className="gl-card gl-celebrate-card p-6 sm:p-8 text-center space-y-5"
+          >
+            {/* Badge esplosione energia con anelli radiali e scintille */}
+            <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+              <span className="gl-ring-burst rounded-2xl" />
+              <span className="gl-ring-burst-delay rounded-2xl" />
+              {SPARK_PARTICLES.map((sp, sIdx) => (
+                <span
+                  key={sIdx}
+                  className="gl-spark-dot"
+                  style={{
+                    width: `${sp.size}px`,
+                    height: `${sp.size}px`,
+                    background: sp.color,
+                    '--sx': sp.sx,
+                    '--sy': sp.sy,
+                    '--sd': sp.delay
+                  }}
+                />
+              ))}
+              <div className="gl-celebrate-pop relative z-10 w-16 h-16 rounded-2xl bg-acc/15 border-2 border-acc grid place-items-center text-acc shadow-[0_0_32px_-4px_var(--glow)]">
+                <CheckCircle2 className="w-9 h-9" strokeWidth={2.4} />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="text-xs font-mono text-acc font-bold">
-                {setsCompletedProgress}/{totalSetsInDay} {t('lblSets').toLowerCase()} · {guidedProgressPercent}%
+            <div className="space-y-2.5">
+              <div
+                className="gl-phrase-rise inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-acc/10 border border-acc/30 text-xs font-mono text-acc font-bold"
+                style={{ '--d': '80ms' }}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{setsCompletedProgress}/{totalSetsInDay} {t('lblSets').toLowerCase()} · {guidedProgressPercent}%</span>
               </div>
-              <h2 className="font-dot font-black text-2xl sm:text-3xl text-acc">
+              <h2 className="gl-title-slam font-dot font-black text-2xl sm:text-3xl text-acc [text-shadow:0_0_24px_var(--glow)]">
                 {encouragementData.heading}
               </h2>
-              <p className="text-sm sm:text-base font-sans text-fg/95 max-w-md mx-auto leading-relaxed">
+              <p
+                className="gl-phrase-rise text-sm sm:text-base font-sans font-medium text-fg max-w-md mx-auto leading-relaxed"
+                style={{ '--d': '240ms' }}
+              >
                 {encouragementData.phrase}
               </p>
             </div>
 
             {nextEx && (
-              <div className="p-3.5 rounded-xl border border-sline bg-bg2/80 text-xs font-mono space-y-1 max-w-md mx-auto">
+              <div
+                className="gl-phrase-rise p-3.5 rounded-xl border border-sline bg-bg2/80 text-xs font-mono space-y-1 max-w-md mx-auto"
+                style={{ '--d': '340ms' }}
+              >
                 <span className="text-[10px] uppercase tracking-wider text-dim block">
                   {t('guidedNextUp')} ({exIdx + 2}/{exercises.length})
                 </span>
                 <span className="font-dot font-extrabold text-sm sm:text-base text-fg block break-words">
-                  {getExerciseDisplayName(nextEx.name, lang)}
+                  {getExerciseDisplayName(nextEx, lang)}
                 </span>
               </div>
             )}
@@ -978,7 +1190,8 @@ export default function GuidedWorkoutModal({
             <button
               type="button"
               onClick={handleGoToNextExercise}
-              className="gl-btn-primary !h-12 !px-6 text-sm font-mono font-black inline-flex items-center gap-2 mx-auto"
+              className="gl-phrase-rise gl-btn-primary !h-12 !px-6 text-sm font-mono font-black inline-flex items-center gap-2 mx-auto"
+              style={{ '--d': '420ms' }}
             >
               <span>{t('guidedNextExerciseBtn')}</span>
               <ArrowRight className="w-4 h-4" />
@@ -986,50 +1199,97 @@ export default function GuidedWorkoutModal({
           </div>
         )}
 
-        {/* ---------- FASE 4: ALLENAMENTO COMPLETATO ---------- */}
+        {/* ---------- FASE 4: ALLENAMENTO COMPLETATO CON FESTEGGIAMENTO ---------- */}
         {phase === 'completed' && (
-          <div className="gl-card p-6 sm:p-10 text-center space-y-6 gl-rise">
-            <div className="w-20 h-20 mx-auto rounded-full bg-acc/15 border-2 border-acc grid place-items-center text-acc shadow-[0_0_40px_-4px_var(--glow)]">
-              <Trophy className="w-10 h-10" />
+          <>
+            {/* Pioggia di coriandoli non bloccante */}
+            <div className="pointer-events-none fixed inset-0 overflow-hidden z-10" aria-hidden="true">
+              {CONFETTI_PIECES.map((c, idx) => (
+                <span
+                  key={idx}
+                  className="gl-confetti-piece"
+                  style={{
+                    left: c.left,
+                    width: `${c.w}px`,
+                    height: `${c.h}px`,
+                    background: c.color,
+                    '--cx': c.cx,
+                    '--cdur': c.dur,
+                    '--cdel': c.del
+                  }}
+                />
+              ))}
             </div>
 
-            <div className="space-y-2">
-              <span className="gl-tag !text-[10px]" style={{ '--fc': 'rgb(var(--c-acc))' }}>
-                <Sparkles className="w-3 h-3 mr-1" />
-                100%
-              </span>
-              <h2 className="font-dot font-black text-2xl sm:text-4xl text-fg">
-                {t('guidedWorkoutDoneTitle')}
-              </h2>
-              <p className="text-sm font-sans text-dim max-w-md mx-auto">
-                {t('guidedWorkoutDoneSub')}
-              </p>
-            </div>
+            <div className="gl-card gl-celebrate-card relative z-20 p-6 sm:p-10 text-center space-y-6">
+              {/* Trofeo eroico con doppia onda d'urto e scintille */}
+              <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+                <span className="gl-ring-burst rounded-full" />
+                <span className="gl-ring-burst-delay rounded-full" />
+                {SPARK_PARTICLES.map((sp, sIdx) => (
+                  <span
+                    key={sIdx}
+                    className="gl-spark-dot"
+                    style={{
+                      width: `${sp.size + 1}px`,
+                      height: `${sp.size + 1}px`,
+                      background: sp.color,
+                      '--sx': sp.sx,
+                      '--sy': sp.sy,
+                      '--sd': sp.delay
+                    }}
+                  />
+                ))}
+                <div className="gl-trophy-hero relative z-10 w-20 h-20 rounded-full bg-acc/15 border-2 border-acc grid place-items-center text-acc">
+                  <Trophy className="w-10 h-10" />
+                </div>
+              </div>
 
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 font-mono max-w-md mx-auto">
-              <div className="gl-param-card p-3">
-                <span className="block text-[9.5px] text-dim uppercase">{t('exercises')}</span>
-                <span className="text-lg font-black text-acc block mt-0.5">{exercises.length}</span>
+              <div className="space-y-2.5">
+                <span
+                  className="gl-phrase-rise gl-tag !text-[10px]"
+                  style={{ '--fc': 'rgb(var(--c-acc))', '--d': '80ms' }}
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  100%
+                </span>
+                <h2 className="gl-title-slam font-dot font-black text-2xl sm:text-4xl text-acc [text-shadow:0_0_28px_var(--glow)]">
+                  {t('guidedWorkoutDoneTitle')}
+                </h2>
+                <p
+                  className="gl-phrase-rise text-sm sm:text-base font-sans text-dim max-w-md mx-auto"
+                  style={{ '--d': '200ms' }}
+                >
+                  {t('guidedWorkoutDoneSub')}
+                </p>
               </div>
-              <div className="gl-param-card p-3">
-                <span className="block text-[9.5px] text-dim uppercase">{t('lblSets')}</span>
-                <span className="text-lg font-black text-fg block mt-0.5">{totalSetsInDay}</span>
-              </div>
-              <div className="gl-param-card p-3">
-                <span className="block text-[9.5px] text-dim uppercase">{t('guidedDurationLabel')}</span>
-                <span className="text-lg font-black text-fg block mt-0.5">{formatElapsed()}</span>
-              </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="gl-btn-primary !h-11 !px-6 text-xs sm:text-sm font-mono font-bold inline-flex items-center gap-2 mx-auto"
-            >
-              <Check className="w-4 h-4" />
-              <span>{t('guidedBackToSheet')}</span>
-            </button>
-          </div>
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3 font-mono max-w-md mx-auto">
+                <div className="gl-phrase-rise gl-param-card p-3" style={{ '--d': '240ms' }}>
+                  <span className="block text-[9.5px] text-dim uppercase">{t('exercises')}</span>
+                  <span className="text-lg font-black text-acc block mt-0.5">{exercises.length}</span>
+                </div>
+                <div className="gl-phrase-rise gl-param-card p-3" style={{ '--d': '320ms' }}>
+                  <span className="block text-[9.5px] text-dim uppercase">{t('lblSets')}</span>
+                  <span className="text-lg font-black text-fg block mt-0.5">{totalSetsInDay}</span>
+                </div>
+                <div className="gl-phrase-rise gl-param-card p-3" style={{ '--d': '400ms' }}>
+                  <span className="block text-[9.5px] text-dim uppercase">{t('guidedDurationLabel')}</span>
+                  <span className="text-lg font-black text-fg block mt-0.5">{formatElapsed()}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="gl-phrase-rise gl-btn-primary !h-12 !px-6 text-xs sm:text-sm font-mono font-bold inline-flex items-center gap-2 mx-auto"
+                style={{ '--d': '460ms' }}
+              >
+                <Check className="w-4 h-4" />
+                <span>{t('guidedBackToSheet')}</span>
+              </button>
+            </div>
+          </>
         )}
 
       </main>

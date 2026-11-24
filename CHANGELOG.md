@@ -5,6 +5,26 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/)
 
 ---
 
+## [1.1.4] - 2026-11-24 (Traduttore Esercizi IT/EN/ES, Cronometro Attivo & Animazioni Guidate)
+
+### 🌍 Internazionalizzazione Esercizi
+- **Traduzione Completa Titoli Esercizi (`src/services/exerciseService.js`):**
+  - Introdotta ricerca bidirezionale (`IT ↔ EN ↔ ES`) su dizionario curato con priorità esatta/lunghezza chiave.
+  - Aggiunto **traduttore composizionale leggero** locale (zero chiamate esterne, < 2 KB) per tradurre automaticamente in Italiano e Spagnolo tutti i 1300+ esercizi del catalogo preservando invariati gli esercizi personalizzati (`isCustom: true`).
+
+### ✨ Animazioni & Cronometro "Allenamento Guidato" (`GuidedWorkoutModal.jsx` + `index.css`)
+- **Cronometro di Attività Effettiva Raddoppiato:** posizionato in alto sopra la barra percentuale; conta **solo il tempo reale di lavoro** fermandosi automaticamente durante il recupero e tra un esercizio e l'altro, riprendendo al secondo esatto alla serie successiva. Barra di avanzamento raddoppiata in altezza.
+- **Sequenza Animata in 3 Fasi ad ogni nuova serie:**
+  1. Il riquadro dell'istruzione si ingrandisce con effetto fascio di luce luminosa e si riposiziona dolcemente.
+  2. Parte il conto alla rovescia ingrandito **`3` ➔ `2` ➔ `1`**.
+  3. Il badge **`GO!`** con doppie frecce lampeggia e scorre in loop da sinistra a destra (colore verde in tema chiaro).
+- **Badge `RECUPERO` a Battito Cardiaco:** durante il conto alla rovescia di recupero compare un badge arancione fermo sul posto con animazione a doppio battito cardiaco.
+- **Animazioni di Festeggiamento App-Style:**
+  - **Completamento singolo esercizio:** card con flash luminoso, doppia onda d'urto radiale, 12 scintille e testo animato a cascata sopra alle 100 frasi motivazionali.
+  - **Completamento allenamento:** pioggia di coriandoli non bloccante, trofeo eroico fluttuante con scintille e riepilogo statistico sfalsato.
+
+---
+
 ## [1.1.3] - 2026-11-23 (Allenamento Guidato, Piramidali & Mobile UX Fix)
 
 ### 🛠️ Bug Fix & UX Mobile
@@ -94,6 +114,4 @@ Punto fermo di rilascio stabile della prima versione di produzione di **GymLink*
   - Licenza protetta **Creative Commons Non-Commerciale (CC BY-NC 4.0)** che vieta l'uso a scopo di lucro a terzi.
   - File `public/robots.txt` per proteggere le routine private dei clienti dai motori di ricerca.
 - **Hosting & CI/CD:** Distribuzione continua su **Cloudflare Pages** con routing SPA (`_redirects`) e supporto Node 20.
-
----
 
